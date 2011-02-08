@@ -79,7 +79,20 @@
    buyer: cannot draw 3 EUR from cashbox, only 1 left.
    Simulation finished.
    Final state: [<cashbox: 1 EUR in stock>, <storage: 3 parts in stock>]
-   >>>
+
+   You can export the simulation graph in the DOT graph language:
+
+   >>> s.save_dot("part_buyer.dot")
+   Writing DOT file:
+   digraph {
+       cashbox -> buyer ;
+       buyer -> storage ;
+   }
+   <BLANKLINE>
+
+   Clean up:
+   >>> import os
+   >>> os.remove("part_buyer.dot")
 """
 
 import time
@@ -309,7 +322,6 @@ class Simulation:
         """
 
         # TODO: Liste von Converters gleich als Parameter übergeben? Mit *(?)?
-        # TODO: graph export, e.g. graphviz DOT
 
         self.converter_list = []
         self.container_list = []
@@ -368,6 +380,33 @@ class Simulation:
         print("Final state: {}".format(self.container_list))
 
         return
+
+    def save_dot(self, filename):
+        """Export the simulation graph into the Graphviz DOT graph language.
+           See http://www.graphviz.org/ for details.
+        """
+
+        dot_string_list = ["digraph {\n"]
+
+        for converter in self.converter_list:
+
+            for tuple in converter.source_tuples_list:
+
+                dot_string_list.append("    {} -> {} ;\n".format(tuple[0].name,
+                                                                 converter.name))
+
+            dot_string_list.append("    {} -> {} ;\n".format(converter.name,
+                                                             converter.target_units_tuple[0].name))
+
+        dot_string_list.append("}\n")
+
+        dot_string = "".join(dot_string_list)
+
+        print("Writing DOT file:\n{}".format(dot_string))
+
+        file = open(filename, "w")
+        file.write(dot_string)
+        file.close()
 
     def __repr__(self):
         """Readable string representation.
