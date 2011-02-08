@@ -30,8 +30,7 @@
 
    Then create a converter and set up the draw-deliver-ratio:
 
-   >>> buyer = stepsim.Converter("buyer", storage, 1)
-   >>> buyer.draw_from(cashbox, 3)
+   >>> buyer = stepsim.Converter("buyer", 2, (cashbox, 3), (storage, 1))
    Adding source 'cashbox', drawing 3 EUR per step.
 
    Now we are ready to create a simulation:
@@ -39,29 +38,54 @@
    >>> s = stepsim.Simulation()
    >>> s.add_converter(buyer)
    Adding converter 'buyer' to simulation.
+   Adding containers ['cashbox', 'storage'] to simulation.
+   >>> s
+   <Simulation consisting of [<buyer: converting from ['cashbox'] to storage>]>
 
-   You can step through simulations or simply let it run until an Exception
-   occurs:
+   You can now step through the simulation or simply let it run until an end
+   condition is satisfied:
 
-   >>> s.run()
+   >>> s.run(lambda : not buyer.last_step_successful)
    Starting simulation.
    Next step.
+   buyer ready to draw resources
    buyer drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
+   Next step.
+   buyer conversion in progress, 2 steps left.
+   Next step.
+   buyer conversion in progress, 1 steps left.
+   Next step.
    buyer delivering 1 parts to storage. storage stock is 1 parts now.
    Next step.
+   buyer ready to draw resources
    buyer drawing 3 EUR from cashbox. cashbox has 4 EUR left now.
+   Next step.
+   buyer conversion in progress, 2 steps left.
+   Next step.
+   buyer conversion in progress, 1 steps left.
+   Next step.
    buyer delivering 1 parts to storage. storage stock is 2 parts now.
    Next step.
+   buyer ready to draw resources
    buyer drawing 3 EUR from cashbox. cashbox has 1 EUR left now.
+   Next step.
+   buyer conversion in progress, 2 steps left.
+   Next step.
+   buyer conversion in progress, 1 steps left.
+   Next step.
    buyer delivering 1 parts to storage. storage stock is 3 parts now.
    Next step.
-   Exception while executing step in <buyer: converting from ['cashbox'] to storage>
+   buyer ready to draw resources
+   buyer: cannot draw 3 EUR from cashbox, only 1 left.
    Simulation finished.
+   Final state: [<cashbox: 1 EUR in stock>, <storage: 3 parts in stock>]
    >>>
 """
 
+import time
+
 class Container:
-    """A Container stores a discrete number of units of a single ressource.
+    """A Container stores a discrete number of units of a single resource.
 
        Attributes:
 
@@ -121,19 +145,49 @@ class Container:
 
 class Converter:
     """A Converter drains units from one or more Containers and stores the result in another Container.
+
+       Attributes:
+
+       Converter.name
+           A string holding the name of this Converter.
+
+       Converter.steps
+           Interger holding the number of steps needed to manufacture the output.
+
+       Converter.last_step_successful
+           Boolean flag denoting whether the last step (draw / deliver) worked out.
+
+       Converter.countdown
+           A counter to implement a three-state state machine:
+           -1 : ready to draw resources
+           >0 : resources drawn, conversion in progress
+            0 : conversion ready, delivering
     """
 
-    # TODO: extra speed parameter? To be able to speed up / slow down
-
-    def __init__(self, name, target, units):
+    def __init__(self, name, steps, source_units_tuple, target_units_tuple):
         """Initialise.
-           target must be an instance of Container.
-           units must be an integer.
+           source_units_tuple, target_units_tuple are tuples of (Container,
+           integer) giving a source and a target container and the number of
+           units to draw / deliver.
         """
 
         self.name = name
-        self.target_units_tuple = (target, units)
+
+        self.steps = steps
+
+        self.target_units_tuple = target_units_tuple
+
         self.source_tuples_list = []
+        self.draw_from(source_units_tuple[0], source_units_tuple[1])
+
+        self.last_step_successful = True
+
+        # countdown is used as a three-state state machine:
+        # -1 : ready to draw resources
+        # >0 : resources drawn, conversion in progress
+        #  0 : conversion ready, delivering
+        #
+        self.countdown = -1
 
         return
 
@@ -144,8 +198,8 @@ class Converter:
         self.source_tuples_list.append((container, units))
 
         print("Adding source '{}', drawing {} {} per step.".format(container.name,
-                                                                  units,
-                                                                  container.type))
+                                                                   units,
+                                                                   container.type))
 
         return
 
@@ -153,35 +207,88 @@ class Converter:
         """Draw units from source Containers and feed units to target Container.
         """
 
-        # TODO: test whether the step can be completed at all
-        # TODO: noop until step can be completed
+        if self.countdown == -1:
 
-        # First draw from all source Containers
-        #
-        for tuple in self.source_tuples_list:
+            print("{} ready to draw resources".format(self.name))
 
-            units_drawn = tuple[0].draw(tuple[1])
+            # Hoping for the best this time!
+            #
+            self.last_step_successful = True
 
-            if units_drawn == tuple[1]:
+            # First check if enough resources are available
+            #
+            for tuple in self.source_tuples_list:
 
-                print("{0} drawing {1} {2} from {3}. {3} has {4} {2} left now.".format(self.name,
-                                                        tuple[1],
-                                                        tuple[0].type,
-                                                        tuple[0].name,
-                                                        tuple[0].stock))
+                if tuple[0].stock < tuple[1]:
 
-            else:
-                raise Exception("Not enough units from {}".format(tuple[0].name))
+                    print("{}: cannot draw {} {} from {}, only {} left.".format(self.name,
+                                                                               tuple[1],
+                                                                               tuple[0].type,
+                                                                               tuple[0].name,
+                                                                               tuple[0].stock))
 
-        # Then deliver to target Container
-        #
-        self.target_units_tuple[0].deliver(self.target_units_tuple[1])
+                    self.last_step_successful = False
 
-        print("{0} delivering {1} {2} to {3}. {3} stock is {4} {2} now.".format(self.name,
-                                                 self.target_units_tuple[1],
-                                                 self.target_units_tuple[0].type,
-                                                 self.target_units_tuple[0].name,
-                                                 self.target_units_tuple[0].stock))
+            if self.last_step_successful:
+
+                # Loop again, drawing from all source Containers
+                #
+                for tuple in self.source_tuples_list:
+
+                    units_drawn = tuple[0].draw(tuple[1])
+
+                    if units_drawn == tuple[1]:
+
+                        msg = "{0} drawing {1} {2} from {3}. {3} has {4} {2} left now."
+
+                        print(msg.format(self.name,
+                                         tuple[1],
+                                         tuple[0].type,
+                                         tuple[0].name,
+                                         tuple[0].stock))
+
+                    else:
+                        # Due to the test above, this should not happen
+                        #
+                        msg = "{0} could only draw {1} {2} instead of {3} {2} from {4}."
+
+                        print(msg.format(self.name,
+                                         units_drawn,
+                                         tuple[0].type,
+                                         tuple[1],
+                                         tuple[0].name))
+
+                        self.last_step_successful = False
+                # All good?
+                #
+                if self.last_step_successful:
+
+                    self.countdown = self.steps
+
+        elif self.countdown == 0:
+
+            # Still going?
+            #
+            if self.last_step_successful:
+
+                # Then deliver to target Container
+                #
+                self.target_units_tuple[0].deliver(self.target_units_tuple[1])
+
+                print("{0} delivering {1} {2} to {3}. {3} stock is {4} {2} now.".format(self.name,
+                                                         self.target_units_tuple[1],
+                                                         self.target_units_tuple[0].type,
+                                                         self.target_units_tuple[0].name,
+                                                         self.target_units_tuple[0].stock))
+
+                self.countdown = -1
+
+        elif self.countdown > 0:
+
+            print("{} conversion in progress, {} steps left.".format(self.name,
+                                                                     self.countdown))
+
+            self.countdown = self.countdown - 1
 
         return
 
@@ -201,7 +308,11 @@ class Simulation:
         """Initialise.
         """
 
+        # TODO: Liste von Converters gleich als Parameter übergeben? Mit *(?)?
+        # TODO: graph export, e.g. graphviz DOT
+
         self.converter_list = []
+        self.container_list = []
 
         return
 
@@ -213,37 +324,53 @@ class Simulation:
 
         print("Adding converter '{}' to simulation.".format(converter.name))
 
+        for container in map(lambda x: x[0], converter.source_tuples_list):
+
+            if container not in self.container_list:
+
+                self.container_list.append(container)
+
+        if converter.target_units_tuple[0] not in self.container_list:
+
+            self.container_list.append(converter.target_units_tuple[0])
+
+        print("Adding containers {} to simulation.".format(list(map(lambda x: x.name, self.container_list))))
+
         return
 
     def step(self):
         """Advance one simulation step.
-           Will return True upon a successful step, False otherwise.
         """
 
         print("Next step.")
 
         for converter in self.converter_list:
 
-            try:
+            converter.step()
 
-                converter.step()
+        return
 
-            except:
-                print("Exception while executing step in {}".format(str(converter)))
-
-                return False
-
-        return True
-
-    def run(self):
+    def run(self, break_check, delay = 0):
         """Run the simulation until an Exception occurs.
+           break_check must be a function. The simulation will be stopped when in returns True.
+           delay is the time in seconds to pause between steps.
         """
 
         print("Starting simulation.")
 
-        while self.step():
-            pass
+        while not break_check():
+
+            self.step()
+
+            time.sleep(delay)
 
         print("Simulation finished.")
+        print("Final state: {}".format(self.container_list))
 
         return
+
+    def __repr__(self):
+        """Readable string representation.
+        """
+
+        return "<Simulation consisting of {}>".format(str(self.converter_list))
