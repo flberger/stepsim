@@ -20,7 +20,7 @@
 
 # Work started on 05 Feb 2011.
 
-# NOTE: in string formatting operations, I use "{1}" instead of "{}" to be 
+# NOTE: in string formatting operations, I use "{1}" instead of "{}" to be
 # compatible with Python < 3.1
 
 import time
@@ -138,7 +138,7 @@ class Converter:
 
         self.source_tuples_list.append((container, units))
 
-        print("{0}: adding source '{1}', drawing {2} {3} per step.".format(self.name,
+        print("{0}: Adding source '{1}', drawing {2} {3} per step.".format(self.name,
                                                                            container.name,
                                                                            units,
                                                                            container.type))
@@ -151,7 +151,7 @@ class Converter:
 
         if self.countdown == -1:
 
-            print("{0} ready to draw resources".format(self.name))
+            print("{0}: Ready to draw resources".format(self.name))
 
             # Hoping for the best this time!
             #
@@ -163,7 +163,7 @@ class Converter:
 
                 if tuple[0].stock < tuple[1]:
 
-                    print("{0}: cannot draw {1} {2} from {3}, only {4} left.".format(self.name,
+                    print("{0}: Cannot draw {1} {2} from {3}, only {4} left.".format(self.name,
                                                                                      tuple[1],
                                                                                      tuple[0].type,
                                                                                      tuple[0].name,
@@ -181,7 +181,7 @@ class Converter:
 
                     if units_drawn == tuple[1]:
 
-                        msg = "{0} drawing {1} {2} from {3}. {3} has {4} {2} left now."
+                        msg = "{0}: Drawing {1} {2} from {3}. {3} has {4} {2} left now."
 
                         print(msg.format(self.name,
                                          tuple[1],
@@ -192,7 +192,7 @@ class Converter:
                     else:
                         # Due to the test above, this should not happen
                         #
-                        msg = "{0} could only draw {1} {2} instead of {3} {2} from {4}."
+                        msg = "{0}: Could only draw {1} {2} instead of {3} {2} from {4}."
 
                         print(msg.format(self.name,
                                          units_drawn,
@@ -217,7 +217,7 @@ class Converter:
                 #
                 self.target_units_tuple[0].deliver(self.target_units_tuple[1])
 
-                print("{0} delivering {1} {2} to {3}. {3} stock is {4} {2} now.".format(self.name,
+                print("{0}: Delivering {1} {2} to {3}. {3} stock is {4} {2} now.".format(self.name,
                                                          self.target_units_tuple[1],
                                                          self.target_units_tuple[0].type,
                                                          self.target_units_tuple[0].name,
@@ -227,7 +227,7 @@ class Converter:
 
         elif self.countdown > 0:
 
-            print("{0} conversion in progress, {1} steps left.".format(self.name,
+            print("{0}: Conversion in progress, {1} steps left.".format(self.name,
                                                                        self.countdown))
 
             self.countdown = self.countdown - 1
@@ -304,24 +304,28 @@ class Simulation:
 
             self.step_counter = self.step_counter + 1
 
-            print("Step {0}:".format(self.step_counter))
+            print("\nStep {0}:".format(self.step_counter))
 
             self.step()
 
             time.sleep(delay)
 
-        print("Break condition met, simulation finished.")
+        print("\nBreak condition met, simulation finished.")
         print("Final state after {0} steps: {1}".format(self.step_counter,
                                                       self.container_list))
 
         return
 
-    def save_dot(self, filename):
+    def save_dot(self, filename, size = 5, fontsize = 10, fontname = "Bitstream Vera Sans"):
         """Export the simulation graph into the Graphviz DOT graph language.
            See http://www.graphviz.org/ for details.
+           size, fontsize and fontname are DOT graph parameters.
         """
 
-        dot_string_list = ["digraph {\n"]
+        dot_string_list = ["""digraph {{
+    graph [size={0}] ;
+    node [fontsize={1}, fontname="{2}"] ;
+""".format(size, fontsize, fontname)]
 
         for converter in self.converter_list:
 

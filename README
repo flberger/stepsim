@@ -124,6 +124,8 @@ You can export the simulation graph in the DOT graph language (see
     >>> s.save_dot("part_buyer.dot")
     Writing DOT file:
     digraph {
+        graph [size=5] ;
+        node [fontsize=10, fontname="Bitstream Vera Sans"] ;
         "cashbox" [shape=box];
         "cashbox" -> "buyer" ;
         "storage" [shape=box];
@@ -135,6 +137,9 @@ Clean up:
 
     >>> import os
     >>> os.remove("part_buyer.dot")
+
+The file 'making_cakes.py' shows a more elaborate example. It is included in the 
+ZIP archive and will be installed in 'share/doc/stepsim/examples'.
 
 
 License
@@ -148,4 +153,3 @@ Author
 
 (c) Florian Berger <fberger@florian-berger.de>
 
-copying making_cakes.py -> /home/florian/.local/share/doc/stepsim/examples

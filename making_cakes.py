@@ -35,7 +35,7 @@ def main():
     dough = stepsim.Container("Dough", "gram")
     cakes = stepsim.Container("Cakes", "cakes")
 
-    # Prices as of Feb 2011.
+    # Prices in Germany as of Feb 2011.
 
     butter_buyer = stepsim.Converter("Butter Buyer", 1, (cashbox, 1.35), (butter, 250))
     sugar_buyer = stepsim.Converter("Sugar Buyer", 1, (cashbox, 1.19), (sugar, 1000))
@@ -73,7 +73,7 @@ def main():
     making_cakes.add_converter(oven_2)
 
     #making_cakes.run(lambda : making_cakes.step_counter == 1000)
-    making_cakes.run(lambda : cakes.stock == 4)
+    making_cakes.run(lambda : cakes.stock == 4, delay = 1.0)
 
     making_cakes.save_dot("making_cakes.dot")
 
