@@ -1,2 +1,6 @@
 *.pyc
 commit.txt
+MANIFEST
+dist
+*.dot
+*.png

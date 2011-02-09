@@ -1,3 +1,8 @@
+"""StepSim - Python Step-based Simulation Package
+
+   Copyright 2011 Florian Berger <fberger@florian-berger.de>
+"""
+
 # This file is part of stepsim.
 #
 # stepsim is free software: you can redistribute it and/or modify
@@ -15,85 +20,8 @@
 
 # Work started on 05 Feb 2011.
 
-"""StepSim - Python Step-based Simulation Package
-
-   Copyright 2011 Florian Berger <fberger@florian-berger.de>
-
-   StepSim computes step-by-step simulations of a graph of containers and
-   converterts.
-
-   First create the containers:
-
-   >>> import stepsim
-   >>> cashbox = stepsim.Container("cashbox", "EUR", 10)
-   >>> storage = stepsim.Container("storage", "parts")
-
-   Then create a converter and set up the draw-deliver-ratio:
-
-   >>> buyer = stepsim.Converter("buyer", 2, (cashbox, 3), (storage, 1))
-   Adding source 'cashbox', drawing 3 EUR per step.
-
-   Now we are ready to create a simulation:
-
-   >>> s = stepsim.Simulation()
-   >>> s.add_converter(buyer)
-   Adding converter 'buyer' to simulation.
-   Adding containers ['cashbox', 'storage'] to simulation.
-   >>> s
-   <Simulation consisting of [<buyer: converting from ['cashbox'] to storage>]>
-
-   You can now step through the simulation or simply let it run until an end
-   condition is satisfied:
-
-   >>> s.run(lambda : not buyer.last_step_successful)
-   Starting simulation.
-   Next step.
-   buyer ready to draw resources
-   buyer drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
-   Next step.
-   buyer conversion in progress, 2 steps left.
-   Next step.
-   buyer conversion in progress, 1 steps left.
-   Next step.
-   buyer delivering 1 parts to storage. storage stock is 1 parts now.
-   Next step.
-   buyer ready to draw resources
-   buyer drawing 3 EUR from cashbox. cashbox has 4 EUR left now.
-   Next step.
-   buyer conversion in progress, 2 steps left.
-   Next step.
-   buyer conversion in progress, 1 steps left.
-   Next step.
-   buyer delivering 1 parts to storage. storage stock is 2 parts now.
-   Next step.
-   buyer ready to draw resources
-   buyer drawing 3 EUR from cashbox. cashbox has 1 EUR left now.
-   Next step.
-   buyer conversion in progress, 2 steps left.
-   Next step.
-   buyer conversion in progress, 1 steps left.
-   Next step.
-   buyer delivering 1 parts to storage. storage stock is 3 parts now.
-   Next step.
-   buyer ready to draw resources
-   buyer: cannot draw 3 EUR from cashbox, only 1 left.
-   Simulation finished.
-   Final state: [<cashbox: 1 EUR in stock>, <storage: 3 parts in stock>]
-
-   You can export the simulation graph in the DOT graph language:
-
-   >>> s.save_dot("part_buyer.dot")
-   Writing DOT file:
-   digraph {
-       cashbox -> buyer ;
-       buyer -> storage ;
-   }
-   <BLANKLINE>
-
-   Clean up:
-   >>> import os
-   >>> os.remove("part_buyer.dot")
-"""
+# NOTE: in string formatting operations, I use "{1}" instead of "{}" to be 
+# compatible with Python < 3.1
 
 import time
 
@@ -114,7 +42,7 @@ class Container:
 
     def __init__(self, name, type, stock = 0):
         """Initalise.
-           type must be a string describing the type of units (kg, €, etc.).
+           type must be a string describing the type of units (kg, EUR, etc.).
            stock is the initial stock and must be an integer.
         """
 
@@ -154,7 +82,7 @@ class Container:
         """Readable string representation.
         """
 
-        return "<{}: {} {} in stock>".format(self.name, self.stock, self.type)
+        return "<{0}: {1} {2} in stock>".format(self.name, self.stock, self.type)
 
 class Converter:
     """A Converter drains units from one or more Containers and stores the result in another Container.
@@ -210,9 +138,10 @@ class Converter:
 
         self.source_tuples_list.append((container, units))
 
-        print("Adding source '{}', drawing {} {} per step.".format(container.name,
-                                                                   units,
-                                                                   container.type))
+        print("{0}: adding source '{1}', drawing {2} {3} per step.".format(self.name,
+                                                                           container.name,
+                                                                           units,
+                                                                           container.type))
 
         return
 
@@ -222,7 +151,7 @@ class Converter:
 
         if self.countdown == -1:
 
-            print("{} ready to draw resources".format(self.name))
+            print("{0} ready to draw resources".format(self.name))
 
             # Hoping for the best this time!
             #
@@ -234,11 +163,11 @@ class Converter:
 
                 if tuple[0].stock < tuple[1]:
 
-                    print("{}: cannot draw {} {} from {}, only {} left.".format(self.name,
-                                                                               tuple[1],
-                                                                               tuple[0].type,
-                                                                               tuple[0].name,
-                                                                               tuple[0].stock))
+                    print("{0}: cannot draw {1} {2} from {3}, only {4} left.".format(self.name,
+                                                                                     tuple[1],
+                                                                                     tuple[0].type,
+                                                                                     tuple[0].name,
+                                                                                     tuple[0].stock))
 
                     self.last_step_successful = False
 
@@ -298,8 +227,8 @@ class Converter:
 
         elif self.countdown > 0:
 
-            print("{} conversion in progress, {} steps left.".format(self.name,
-                                                                     self.countdown))
+            print("{0} conversion in progress, {1} steps left.".format(self.name,
+                                                                       self.countdown))
 
             self.countdown = self.countdown - 1
 
@@ -309,9 +238,9 @@ class Converter:
         """Readable string representation.
         """
 
-        return "<{}: converting from {} to {}>".format(self.name,
-                                                       str(list(map(lambda x: x[0].name, self.source_tuples_list))),
-                                                       self.target_units_tuple[0].name)
+        return "<{0}: converting from {1} to {2}>".format(self.name,
+                                                          str(list(map(lambda x: x[0].name, self.source_tuples_list))),
+                                                          self.target_units_tuple[0].name)
 
 class Simulation:
     """A Simulation wraps a graph of Containers and Converters and runs the simulation step-by-step.
@@ -321,10 +250,11 @@ class Simulation:
         """Initialise.
         """
 
-        # TODO: Liste von Converters gleich als Parameter übergeben? Mit *(?)?
+        # TODO: Liste von Converters gleich als Parameter uebergeben? Mit *(?)?
 
         self.converter_list = []
         self.container_list = []
+        self.step_counter = 0
 
         return
 
@@ -334,7 +264,7 @@ class Simulation:
 
         self.converter_list.append(converter)
 
-        print("Adding converter '{}' to simulation.".format(converter.name))
+        print("Adding converter '{0}' to simulation.".format(converter.name))
 
         for container in map(lambda x: x[0], converter.source_tuples_list):
 
@@ -346,15 +276,13 @@ class Simulation:
 
             self.container_list.append(converter.target_units_tuple[0])
 
-        print("Adding containers {} to simulation.".format(list(map(lambda x: x.name, self.container_list))))
+        print("Current containers: {0}".format(list(map(lambda x: x.name, self.container_list))))
 
         return
 
     def step(self):
         """Advance one simulation step.
         """
-
-        print("Next step.")
 
         for converter in self.converter_list:
 
@@ -370,14 +298,21 @@ class Simulation:
 
         print("Starting simulation.")
 
+        self.step_counter = 0
+
         while not break_check():
+
+            self.step_counter = self.step_counter + 1
+
+            print("Step {0}:".format(self.step_counter))
 
             self.step()
 
             time.sleep(delay)
 
-        print("Simulation finished.")
-        print("Final state: {}".format(self.container_list))
+        print("Break condition met, simulation finished.")
+        print("Final state after {0} steps: {1}".format(self.step_counter,
+                                                      self.container_list))
 
         return
 
@@ -390,19 +325,35 @@ class Simulation:
 
         for converter in self.converter_list:
 
+            # First the source containers
+            #
             for tuple in converter.source_tuples_list:
 
-                dot_string_list.append("    {} -> {} ;\n".format(tuple[0].name,
-                                                                 converter.name))
+                shape_string = '    "{0}" [shape=box];\n'.format(tuple[0].name)
 
-            dot_string_list.append("    {} -> {} ;\n".format(converter.name,
-                                                             converter.target_units_tuple[0].name))
+                if not shape_string in dot_string_list:
+
+                    dot_string_list.append(shape_string)
+
+                dot_string_list.append('    "{0}" -> "{1}" ;\n'.format(tuple[0].name,
+                                                                       converter.name))
+
+            # Then the target container
+            #
+            shape_string = '    "{0}" [shape=box];\n'.format(converter.target_units_tuple[0].name)
+
+            if not shape_string in dot_string_list:
+
+                dot_string_list.append(shape_string)
+
+            dot_string_list.append('    "{0}" -> "{1}" ;\n'.format(converter.name,
+                                                                   converter.target_units_tuple[0].name))
 
         dot_string_list.append("}\n")
 
         dot_string = "".join(dot_string_list)
 
-        print("Writing DOT file:\n{}".format(dot_string))
+        print("Writing DOT file:\n{0}".format(dot_string))
 
         file = open(filename, "w")
         file.write(dot_string)
@@ -412,4 +363,4 @@ class Simulation:
         """Readable string representation.
         """
 
-        return "<Simulation consisting of {}>".format(str(self.converter_list))
+        return "<Simulation consisting of {0}>".format(str(self.converter_list))
