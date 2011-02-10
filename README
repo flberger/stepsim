@@ -80,8 +80,7 @@ Then create a converter and set up the draw-deliver-ratio:
 
 We are ready to create a simulation:
 
-    >>> s = stepsim.Simulation()
-    >>> s.add_converter(buyer)
+    >>> s = stepsim.Simulation(buyer)
     Adding converter 'buyer' to simulation.
     Current containers: ['cashbox', 'storage']
     >>> s

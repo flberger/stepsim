@@ -27,6 +27,15 @@ import logging
 
 def main():
 
+    # Set up logger output
+    #
+    logger = logging.getLogger("stepsim")
+    logger.addHandler(logging.StreamHandler())
+
+    # For more verbose output use logging.DEBUG
+    #
+    logger.setLevel(logging.INFO)
+
     # Let's try a more complicated example and make a cake.
 
     cashbox = stepsim.Container("Cashbox", "EUR", 100.0)
@@ -38,8 +47,8 @@ def main():
     dough = stepsim.Container("Dough", "gram")
     cakes = stepsim.Container("Cakes", "cakes")
 
-    # Prices in Germany as of Feb 2011.
-
+    # Prices in Germany as of Feb 2011. :-)
+    #
     butter_buyer = stepsim.Converter("Butter Buyer", 1, (cashbox, 1.35), (butter, 250))
     sugar_buyer = stepsim.Converter("Sugar Buyer", 1, (cashbox, 1.19), (sugar, 1000))
     eggs_buyer = stepsim.Converter("Eggs Buyer", 1, (cashbox, 2.14), (eggs, 6))
@@ -61,13 +70,11 @@ def main():
     oven_1 = stepsim.Converter("Oven 1", 9, (dough, 1000), (cakes, 1))
     #oven_2 = stepsim.Converter("Oven 2", 9, (dough, 1000), (cakes, 1))
 
-    making_cakes = stepsim.Simulation()
-
-    making_cakes.add_converter(butter_buyer)
-    making_cakes.add_converter(sugar_buyer)
-    making_cakes.add_converter(eggs_buyer)
-    making_cakes.add_converter(flour_buyer)
-    making_cakes.add_converter(milk_buyer)
+    making_cakes = stepsim.Simulation(butter_buyer,
+                                      sugar_buyer,
+                                      eggs_buyer,
+                                      flour_buyer,
+                                      milk_buyer)
 
     making_cakes.add_converter(dough_maker_slow)
     making_cakes.add_converter(dough_maker_fast)
@@ -75,16 +82,9 @@ def main():
     making_cakes.add_converter(oven_1)
     #making_cakes.add_converter(oven_2)
 
-    # Set up logger output
+    # Run simulation
     #
-    logger = logging.getLogger("stepsim")
-    logger.addHandler(logging.StreamHandler())
-
-    # Try logging.DEBUG for more verbose output
-    #
-    logger.setLevel(logging.INFO)
-
-    making_cakes.run(lambda : cakes.stock == 16, delay = 0.0)
+    making_cakes.run(lambda : cakes.stock == 1, delay = 0.5)
 
     # Or try:
     #

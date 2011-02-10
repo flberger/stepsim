@@ -13,7 +13,7 @@ user_install:
 	$(PYTHON) setup.py install --user
 
 commit.txt: Makefile making_cakes.py README setup.py stepsim.py
-	bzr diff >> commit.txt
+	bzr diff > commit.txt
 
 commit:
 	@echo RETURN to commit using commit.txt, CTRL-C to cancel:

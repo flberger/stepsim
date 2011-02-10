@@ -122,7 +122,7 @@ class Converter:
             0 : conversion ready, delivering
     """
 
-    # TODO: implement adaptive flexible converters that draw as much as they can while keeping the ratio
+    # TODO: implement adaptive flexible converters that draw as much as they can (or as much as they can get, given less resources) while keeping the ratio
     # TODO: count (active) steps for accounting
 
     def __init__(self, name, steps, source_units_tuple, target_units_tuple):
@@ -263,15 +263,18 @@ class Simulation:
     """A Simulation wraps a graph of Containers and Converters and runs the simulation step-by-step.
     """
 
-    def __init__(self):
+    def __init__(self, *converters):
         """Initialise.
         """
-
-        # TODO: Liste von Converters gleich als Parameter uebergeben? Mit *(?)?
 
         self.converter_list = []
         self.container_list = []
         self.step_counter = 0
+
+        # Use the default procedure for each converter
+        #
+        for converter in converters:
+            self.add_converter(converter)
 
         return
 
