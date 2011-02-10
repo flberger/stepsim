@@ -22,12 +22,8 @@
 
 import distutils.core
 
-VERSION = "0.1.0"
-LONG_DESCRIPTION = """
-README for StepSim
-==================
-
-About
+VERSION = "0.2.0"
+LONG_DESCRIPTION = """About
 -----
 
 StepSim is a lightweight step-based simulation module written in
@@ -93,19 +89,29 @@ First import the stepsim module:
 
     >>> import stepsim
 
-Then create some containers:
+To get verbose output, configure logging to console:
+
+::
+
+    >>> from sys import stdout
+    >>> import logging
+    >>> logger = logging.getLogger("stepsim")
+    >>> logger.addHandler(logging.StreamHandler(stdout))
+    >>> logger.setLevel(logging.DEBUG)
+
+Now create some containers:
 
 ::
 
     >>> cashbox = stepsim.Container("cashbox", "EUR", 10)
     >>> storage = stepsim.Container("storage", "parts")
 
-Now create a converter and set up the draw-deliver-ratio:
+Then create a converter and set up the draw-deliver-ratio:
 
 ::
 
     >>> buyer = stepsim.Converter("buyer", 2, (cashbox, 3), (storage, 1))
-    buyer: adding source 'cashbox', drawing 3 EUR per step.
+    buyer: Adding source 'cashbox', drawing 3 EUR per step.
 
 We are ready to create a simulation:
 
@@ -126,38 +132,40 @@ buyer can not buy any more parts:
 
     >>> s.run(lambda : not buyer.last_step_successful)
     Starting simulation.
-    Step 1:
-    buyer ready to draw resources
-    buyer drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
-    Step 2:
-    buyer conversion in progress, 2 steps left.
-    Step 3:
-    buyer conversion in progress, 1 steps left.
-    Step 4:
-    buyer delivering 1 parts to storage. storage stock is 1 parts now.
-    Step 5:
-    buyer ready to draw resources
-    buyer drawing 3 EUR from cashbox. cashbox has 4 EUR left now.
-    Step 6:
-    buyer conversion in progress, 2 steps left.
-    Step 7:
-    buyer conversion in progress, 1 steps left.
-    Step 8:
-    buyer delivering 1 parts to storage. storage stock is 2 parts now.
-    Step 9:
-    buyer ready to draw resources
-    buyer drawing 3 EUR from cashbox. cashbox has 1 EUR left now.
-    Step 10:
-    buyer conversion in progress, 2 steps left.
-    Step 11:
-    buyer conversion in progress, 1 steps left.
-    Step 12:
-    buyer delivering 1 parts to storage. storage stock is 3 parts now.
-    Step 13:
-    buyer ready to draw resources
-    buyer: cannot draw 3 EUR from cashbox, only 1 left.
-    Break condition met, simulation finished.
-    Final state after 13 steps: [<cashbox: 1 EUR in stock>, <storage: 3 parts in stock>]
+    --- Step 1: -----------------------------------------------
+    buyer: Ready to draw resources
+    buyer: Drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
+    --- Step 2: -----------------------------------------------
+    buyer: Conversion in progress, 2 steps left.
+    --- Step 3: -----------------------------------------------
+    buyer: Conversion in progress, 1 steps left.
+    --- Step 4: -----------------------------------------------
+    buyer: Delivering 1 parts to storage. storage stock is 1 parts now.
+    --- Step 5: -----------------------------------------------
+    buyer: Ready to draw resources
+    buyer: Drawing 3 EUR from cashbox. cashbox has 4 EUR left now.
+    --- Step 6: -----------------------------------------------
+    buyer: Conversion in progress, 2 steps left.
+    --- Step 7: -----------------------------------------------
+    buyer: Conversion in progress, 1 steps left.
+    --- Step 8: -----------------------------------------------
+    buyer: Delivering 1 parts to storage. storage stock is 2 parts now.
+    --- Step 9: -----------------------------------------------
+    buyer: Ready to draw resources
+    buyer: Drawing 3 EUR from cashbox. cashbox has 1 EUR left now.
+    --- Step 10: -----------------------------------------------
+    buyer: Conversion in progress, 2 steps left.
+    --- Step 11: -----------------------------------------------
+    buyer: Conversion in progress, 1 steps left.
+    --- Step 12: -----------------------------------------------
+    buyer: Delivering 1 parts to storage. storage stock is 3 parts now.
+    --- Step 13: -----------------------------------------------
+    buyer: Ready to draw resources
+    buyer: Cannot draw 3 EUR from cashbox, only 1 left.
+    --- Break condition met, simulation finished. ---------------
+    Final state after 13 steps:
+    <cashbox: 1 EUR in stock>
+    <storage: 3 parts in stock>
 
 You can export the simulation graph in the DOT graph language (see
 `http://www.graphviz.org/ <http://www.graphviz.org/>`_):
@@ -165,7 +173,7 @@ You can export the simulation graph in the DOT graph language (see
 ::
 
     >>> s.save_dot("part_buyer.dot")
-    Writing DOT file:
+    Writing DOT file.
     digraph {
         graph [size=5] ;
         node [fontsize=10, fontname="Bitstream Vera Sans"] ;
@@ -195,11 +203,7 @@ details.
 
 Author
 ------
-
-
-(c) Florian Berger fberger@florian-berger.de
-
-
+Florian Berger
 """
 
 distutils.core.setup(name = "stepsim",
