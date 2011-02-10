@@ -21,6 +21,9 @@
 # Work started on 09 Feb 2011.
 
 import stepsim
+import logging
+
+# TODO: realistic times (steps = minutes)
 
 def main():
 
@@ -56,7 +59,7 @@ def main():
     dough_maker_fast.draw_from(milk, 125)
 
     oven_1 = stepsim.Converter("Oven 1", 9, (dough, 1000), (cakes, 1))
-    oven_2 = stepsim.Converter("Oven 2", 9, (dough, 1000), (cakes, 1))
+    #oven_2 = stepsim.Converter("Oven 2", 9, (dough, 1000), (cakes, 1))
 
     making_cakes = stepsim.Simulation()
 
@@ -70,10 +73,22 @@ def main():
     making_cakes.add_converter(dough_maker_fast)
 
     making_cakes.add_converter(oven_1)
-    making_cakes.add_converter(oven_2)
+    #making_cakes.add_converter(oven_2)
 
+    # Set up logger output
+    #
+    logger = logging.getLogger("stepsim")
+    logger.addHandler(logging.StreamHandler())
+
+    # Try logging.DEBUG for more verbose output
+    #
+    logger.setLevel(logging.INFO)
+
+    making_cakes.run(lambda : cakes.stock == 16, delay = 0.0)
+
+    # Or try:
+    #
     #making_cakes.run(lambda : making_cakes.step_counter == 1000)
-    making_cakes.run(lambda : cakes.stock == 4, delay = 1.0)
 
     making_cakes.save_dot("making_cakes.dot")
 

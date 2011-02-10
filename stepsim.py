@@ -24,6 +24,23 @@
 # compatible with Python < 3.1
 
 import time
+import logging
+
+LOGGER = logging.getLogger("stepsim")
+
+try:
+    LOGGER.addHandler(logging.NullHandler())
+
+except AttributeError:
+
+    # Fallback for Python < 3.1
+    #
+    class NullHandler(logging.Handler):
+
+        def emit(self, record):
+            pass
+
+    LOGGER.addHandler(NullHandler())
 
 class Container:
     """A Container stores a discrete number of units of a single resource.
@@ -105,6 +122,9 @@ class Converter:
             0 : conversion ready, delivering
     """
 
+    # TODO: implement adaptive flexible converters that draw as much as they can while keeping the ratio
+    # TODO: count (active) steps for accounting
+
     def __init__(self, name, steps, source_units_tuple, target_units_tuple):
         """Initialise.
            source_units_tuple, target_units_tuple are tuples of (Container,
@@ -138,10 +158,8 @@ class Converter:
 
         self.source_tuples_list.append((container, units))
 
-        print("{0}: Adding source '{1}', drawing {2} {3} per step.".format(self.name,
-                                                                           container.name,
-                                                                           units,
-                                                                           container.type))
+        msg = "{0}: Adding source '{1}', drawing {2} {3} per step."
+        LOGGER.debug(msg.format(self.name, container.name, units, container.type))
 
         return
 
@@ -151,7 +169,7 @@ class Converter:
 
         if self.countdown == -1:
 
-            print("{0}: Ready to draw resources".format(self.name))
+            LOGGER.debug("{0}: Ready to draw resources".format(self.name))
 
             # Hoping for the best this time!
             #
@@ -163,7 +181,7 @@ class Converter:
 
                 if tuple[0].stock < tuple[1]:
 
-                    print("{0}: Cannot draw {1} {2} from {3}, only {4} left.".format(self.name,
+                    LOGGER.debug("{0}: Cannot draw {1} {2} from {3}, only {4} left.".format(self.name,
                                                                                      tuple[1],
                                                                                      tuple[0].type,
                                                                                      tuple[0].name,
@@ -182,19 +200,17 @@ class Converter:
                     if units_drawn == tuple[1]:
 
                         msg = "{0}: Drawing {1} {2} from {3}. {3} has {4} {2} left now."
-
-                        print(msg.format(self.name,
-                                         tuple[1],
-                                         tuple[0].type,
-                                         tuple[0].name,
-                                         tuple[0].stock))
+                        LOGGER.info(msg.format(self.name,
+                                    tuple[1],
+                                    tuple[0].type,
+                                    tuple[0].name,
+                                    tuple[0].stock))
 
                     else:
                         # Due to the test above, this should not happen
                         #
                         msg = "{0}: Could only draw {1} {2} instead of {3} {2} from {4}."
-
-                        print(msg.format(self.name,
+                        LOGGER.debug(msg.format(self.name,
                                          units_drawn,
                                          tuple[0].type,
                                          tuple[1],
@@ -217,18 +233,19 @@ class Converter:
                 #
                 self.target_units_tuple[0].deliver(self.target_units_tuple[1])
 
-                print("{0}: Delivering {1} {2} to {3}. {3} stock is {4} {2} now.".format(self.name,
-                                                         self.target_units_tuple[1],
-                                                         self.target_units_tuple[0].type,
-                                                         self.target_units_tuple[0].name,
-                                                         self.target_units_tuple[0].stock))
+                msg = "{0}: Delivering {1} {2} to {3}. {3} stock is {4} {2} now."
+                LOGGER.info(msg.format(self.name,
+                                       self.target_units_tuple[1],
+                                       self.target_units_tuple[0].type,
+                                       self.target_units_tuple[0].name,
+                                       self.target_units_tuple[0].stock))
 
                 self.countdown = -1
 
         elif self.countdown > 0:
 
-            print("{0}: Conversion in progress, {1} steps left.".format(self.name,
-                                                                       self.countdown))
+            LOGGER.info("{0}: Conversion in progress, {1} steps left.".format(self.name,
+                                                                              self.countdown))
 
             self.countdown = self.countdown - 1
 
@@ -264,7 +281,7 @@ class Simulation:
 
         self.converter_list.append(converter)
 
-        print("Adding converter '{0}' to simulation.".format(converter.name))
+        LOGGER.debug("Adding converter '{0}' to simulation.".format(converter.name))
 
         for container in map(lambda x: x[0], converter.source_tuples_list):
 
@@ -276,7 +293,7 @@ class Simulation:
 
             self.container_list.append(converter.target_units_tuple[0])
 
-        print("Current containers: {0}".format(list(map(lambda x: x.name, self.container_list))))
+        LOGGER.debug("Current containers: {0}".format(list(map(lambda x: x.name, self.container_list))))
 
         return
 
@@ -296,7 +313,7 @@ class Simulation:
            delay is the time in seconds to pause between steps.
         """
 
-        print("Starting simulation.")
+        LOGGER.info("Starting simulation.")
 
         self.step_counter = 0
 
@@ -304,15 +321,15 @@ class Simulation:
 
             self.step_counter = self.step_counter + 1
 
-            print("\nStep {0}:".format(self.step_counter))
+            LOGGER.info("--- Step {0}: -----------------------------------------------".format(self.step_counter))
 
             self.step()
 
             time.sleep(delay)
 
-        print("\nBreak condition met, simulation finished.")
-        print("Final state after {0} steps: {1}".format(self.step_counter,
-                                                      self.container_list))
+        LOGGER.info("--- Break condition met, simulation finished. ---------------")
+        LOGGER.info("Final state after {0} steps:\n{1}".format(self.step_counter,
+                                                               "\n".join(map(lambda x: str(x), self.container_list))))
 
         return
 
@@ -357,7 +374,8 @@ class Simulation:
 
         dot_string = "".join(dot_string_list)
 
-        print("Writing DOT file:\n{0}".format(dot_string))
+        LOGGER.info("Writing DOT file.")
+        LOGGER.debug(dot_string)
 
         file = open(filename, "w")
         file.write(dot_string)
