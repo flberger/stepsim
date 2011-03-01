@@ -261,6 +261,19 @@ class Converter:
 
 class Simulation:
     """A Simulation wraps a graph of Containers and Converters and runs the simulation step-by-step.
+
+       Attributes:
+
+       Simulation.converter_list
+           A list of Converters whose step() function will be called in
+           Simulation.step().
+
+       Simulation.container_list
+           A list of Containers connected to the Converters, built for
+           convenience.
+
+       Simulation.step_counter
+           An integer counting the steps that have been taken.
     """
 
     def __init__(self, *converters):
@@ -286,17 +299,52 @@ class Simulation:
 
         LOGGER.debug("Adding converter '{0}' to simulation.".format(converter.name))
 
-        for container in map(lambda x: x[0], converter.source_tuples_list):
+        self.rebuild_container_list()
 
-            if container not in self.container_list:
+        return
 
-                self.container_list.append(container)
+    def remove_converter(self, name):
+        """Remove a Converter from the simulation by its name.
+           If name is not found in Simulation.converter_list, no action will be
+           taken.
+        """
 
-        if converter.target_units_tuple[0] not in self.container_list:
+        converter_names = [converter.name for converter in self.converter_list]
 
-            self.container_list.append(converter.target_units_tuple[0])
+        if name in converter_names:
 
-        LOGGER.debug("Current containers: {0}".format(list(map(lambda x: x.name, self.container_list))))
+            LOGGER.debug("Deleting converter '{0}' from simulation.".format(name))
+
+            # TODO: this does not check for multiple occurrences
+            #
+            del self.converter_list[converter_names.index(name)]
+
+            self.rebuild_container_list()
+
+        else:
+            LOGGER.debug("'{0}' not found.".format(name))
+
+        return
+
+    def rebuild_container_list(self):
+        """Rebuild Simulation.container_list from registered converters.
+        """
+
+        self.container_list = []
+
+        for converter in self.converter_list:
+
+            for container in [x[0] for x in converter.source_tuples_list]:
+
+                if container not in self.container_list:
+
+                    self.container_list.append(container)
+
+            if converter.target_units_tuple[0] not in self.container_list:
+
+                self.container_list.append(converter.target_units_tuple[0])
+
+        LOGGER.debug("Current containers: {0}".format([x.name for x in self.container_list]))
 
         return
 
@@ -308,23 +356,21 @@ class Simulation:
 
             converter.step()
 
+        self.step_counter = self.step_counter + 1
+
         return
 
     def run(self, break_check, delay = 0):
-        """Run the simulation until an Exception occurs.
+        """Repeatedly run Simulation.step() until an Exception occurs.
            break_check must be a function. The simulation will be stopped when in returns True.
            delay is the time in seconds to pause between steps.
         """
 
         LOGGER.info("Starting simulation.")
 
-        self.step_counter = 0
-
         while not break_check():
 
-            self.step_counter = self.step_counter + 1
-
-            LOGGER.info("--- Step {0}: -----------------------------------------------".format(self.step_counter))
+            LOGGER.info("--- Step {0}: -----------------------------------------------".format(self.step_counter + 1))
 
             self.step()
 

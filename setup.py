@@ -1,6 +1,6 @@
 """StepSim Setup Script
 
-   Copyright 2010 Florian Berger <fberger@florian-berger.de>
+   Copyright 2011 Florian Berger <fberger@florian-berger.de>
 """
 
 # This file is part of stepsim.

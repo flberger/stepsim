@@ -84,7 +84,7 @@ def main():
 
     # Run simulation
     #
-    making_cakes.run(lambda : cakes.stock == 1, delay = 0.5)
+    making_cakes.run(lambda : cakes.stock == 10, delay = 0.5)
 
     # Or try:
     #
