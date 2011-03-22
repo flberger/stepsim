@@ -120,6 +120,11 @@ class Converter:
            -1 : ready to draw resources
            >0 : resources drawn, conversion in progress
             0 : conversion ready, delivering
+
+       Converter.active_container
+           The last Container that this Converter has just drawn from or
+           delivered to. None if no Container has been accessed in the current
+           step.
     """
 
     # TODO: implement adaptive flexible converters that draw as much as they can (or as much as they can get, given less resources) while keeping the ratio
@@ -149,6 +154,8 @@ class Converter:
         #  0 : conversion ready, delivering
         #
         self.countdown = -1
+
+        self.active_container = None
 
         return
 
@@ -189,6 +196,10 @@ class Converter:
 
                     self.last_step_successful = False
 
+                    # No active Container
+                    #
+                    self.active_container = None
+
             if self.last_step_successful:
 
                 # Loop again, drawing from all source Containers
@@ -196,6 +207,11 @@ class Converter:
                 for tuple in self.source_tuples_list:
 
                     units_drawn = tuple[0].draw(tuple[1])
+
+                    # Only the very last container will persist in
+                    # self.active_container
+                    #
+                    self.active_container = tuple[0]
 
                     if units_drawn == tuple[1]:
 
@@ -217,6 +233,7 @@ class Converter:
                                          tuple[0].name))
 
                         self.last_step_successful = False
+
                 # All good?
                 #
                 if self.last_step_successful:
@@ -233,6 +250,10 @@ class Converter:
                 #
                 self.target_units_tuple[0].deliver(self.target_units_tuple[1])
 
+                # Overwriting possible Container just drawn from
+                #
+                self.active_container = self.target_units_tuple[0]
+
                 msg = "{0}: Delivering {1} {2} to {3}. {3} stock is {4} {2} now."
                 LOGGER.info(msg.format(self.name,
                                        self.target_units_tuple[1],
@@ -248,6 +269,13 @@ class Converter:
                                                                               self.countdown))
 
             self.countdown = self.countdown - 1
+
+            # No active Container
+            #
+            self.active_container = None
+
+        LOGGER.debug("Active Container of {0}: {1}".format(self.name,
+                                                           self.active_container))
 
         return
 
