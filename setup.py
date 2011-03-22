@@ -22,7 +22,7 @@
 
 import distutils.core
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 LONG_DESCRIPTION = """About
 -----
 
@@ -117,8 +117,7 @@ We are ready to create a simulation:
 
 ::
 
-    >>> s = stepsim.Simulation()
-    >>> s.add_converter(buyer)
+    >>> s = stepsim.Simulation(buyer)
     Adding converter 'buyer' to simulation.
     Current containers: ['cashbox', 'storage']
     >>> s
@@ -135,33 +134,46 @@ buyer can not buy any more parts:
     --- Step 1: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
+    Active Container of buyer: <cashbox: 7 EUR in stock>
     --- Step 2: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
+    Active Container of buyer: None
     --- Step 3: -----------------------------------------------
     buyer: Conversion in progress, 1 steps left.
+    Active Container of buyer: None
     --- Step 4: -----------------------------------------------
     buyer: Delivering 1 parts to storage. storage stock is 1 parts now.
+    Active Container of buyer: <storage: 1 parts in stock>
     --- Step 5: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox. cashbox has 4 EUR left now.
+    Active Container of buyer: <cashbox: 4 EUR in stock>
     --- Step 6: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
+    Active Container of buyer: None
     --- Step 7: -----------------------------------------------
     buyer: Conversion in progress, 1 steps left.
+    Active Container of buyer: None
     --- Step 8: -----------------------------------------------
     buyer: Delivering 1 parts to storage. storage stock is 2 parts now.
+    Active Container of buyer: <storage: 2 parts in stock>
     --- Step 9: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox. cashbox has 1 EUR left now.
+    Active Container of buyer: <cashbox: 1 EUR in stock>
     --- Step 10: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
+    Active Container of buyer: None
     --- Step 11: -----------------------------------------------
     buyer: Conversion in progress, 1 steps left.
+    Active Container of buyer: None
     --- Step 12: -----------------------------------------------
     buyer: Delivering 1 parts to storage. storage stock is 3 parts now.
+    Active Container of buyer: <storage: 3 parts in stock>
     --- Step 13: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Cannot draw 3 EUR from cashbox, only 1 left.
+    Active Container of buyer: None
     --- Break condition met, simulation finished. ---------------
     Final state after 13 steps:
     <cashbox: 1 EUR in stock>
@@ -203,7 +215,8 @@ details.
 
 Author
 ------
-Florian Berger
+
+(c) Florian Berger
 """
 
 distutils.core.setup(name = "stepsim",
@@ -220,4 +233,4 @@ distutils.core.setup(name = "stepsim",
                      provides = ["stepsim"],
                      scripts = [],
                      data_files = [("share/doc/stepsim/examples", ['making_cakes.py']),
-                                   ("share/doc/stepsim", ['COPYING'])])
+                                   ("share/doc/stepsim", ['COPYING', 'README', 'NEWS'])])

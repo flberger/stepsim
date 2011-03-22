@@ -1,0 +1,28 @@
+NEWS for StepSim
+================
+
+0.3.0
+-----
+
+Released on 22 March 2011.
+
+Converters can now be removed from a simulation. Converters now signal which 
+container they are accessing for realtime visualisation purposes. Several fixes 
+and improvements.
+
+
+0.2.0
+-----
+
+Released on 10 February 2011.
+
+StepSim now uses the "logging" module instead of printing to stdout.
+
+
+0.1.0
+-----
+
+Released on 09 February 2011.
+
+This is the initial release. The source code is compatible with Linux, Microsoft 
+Windows and Apple OS X.

@@ -1,7 +1,16 @@
 PYTHON = python3
 
 help:
-	@echo targets: doctest, sdist, user_install, commit.txt, commit, xclip, making_cakes.png, pypi
+	@echo targets:
+	@echo '    doctest'
+	@echo '    sdist'
+	@echo '    user_install'
+	@echo '    commit.txt'
+	@echo '    commit'
+	@echo '    xclip'
+	@echo '    making_cakes.png'
+	@echo '    pypi'
+	@echo '    README.rst'
 
 doctest:
 	$(PYTHON) -m doctest README
