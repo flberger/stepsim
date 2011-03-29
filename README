@@ -60,13 +60,9 @@ First import the stepsim module:
 
     >>> import stepsim
 
-To get verbose output, configure logging to console:
+To get verbose output, activate logging to console:
 
-    >>> from sys import stdout
-    >>> import logging
-    >>> logger = logging.getLogger("stepsim")
-    >>> logger.addHandler(logging.StreamHandler(stdout))
-    >>> logger.setLevel(logging.DEBUG)
+    >>> stepsim.log_to_stdout()
 
 Now create some containers:
 

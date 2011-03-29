@@ -54,6 +54,20 @@ def log_to_stderr():
 
     return
 
+def log_to_stdout():
+    """Convenience function. Call this to activate logging to stdout.
+    """
+
+    from sys import stdout
+
+    LOGGER.addHandler(logging.StreamHandler(stdout))
+
+    # For less verbose output use logging.INFO
+    #
+    LOGGER.setLevel(logging.DEBUG)
+
+    return
+
 class Container:
     """A Container stores a discrete number of units of a single resource.
 
