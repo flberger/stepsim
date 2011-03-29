@@ -1,6 +1,15 @@
 NEWS for StepSim
 ================
 
+0.3.1
+-----
+
+Released on 29 March 2011.
+
+Added convenience functions stepsim.log_to_stderr() and stepsim.log_to_stdout() 
+to conveniently activate logging to stderr and stdout, respectively.
+
+
 0.3.0
 -----
 
