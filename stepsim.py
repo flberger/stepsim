@@ -318,13 +318,13 @@ class Simulation:
 
        Attributes:
 
-       Simulation.converter_list
-           A list of Converters whose step() function will be called in
-           Simulation.step().
+       Simulation.converter_dict
+           A dict of Converters whose step() function will be called in
+           Simulation.step(), indexed by their names.
 
        Simulation.container_dict
            A convenience dict of Containers connected to the Converters, indexed
-           by their name.
+           by their names.
 
        Simulation.step_counter
            An integer counting the steps that have been taken.
@@ -334,7 +334,7 @@ class Simulation:
         """Initialise.
         """
 
-        self.converter_list = []
+        self.converter_dict = {}
         self.container_dict = {}
         self.step_counter = 0
 
@@ -349,7 +349,7 @@ class Simulation:
         """Add a Converter to the simulation.
         """
 
-        self.converter_list.append(converter)
+        self.converter_dict[converter.name] = converter
 
         LOGGER.debug("Adding converter '{0}' to simulation.".format(converter.name))
 
@@ -359,19 +359,15 @@ class Simulation:
 
     def remove_converter(self, name):
         """Remove a Converter from the simulation by its name.
-           If name is not found in Simulation.converter_list, no action will be
+           If name is not found in Simulation.converter_dict, no action will be
            taken.
         """
 
-        converter_names = [converter.name for converter in self.converter_list]
-
-        if name in converter_names:
+        if name in converter_dict.keys():
 
             LOGGER.debug("Deleting converter '{0}' from simulation.".format(name))
 
-            # TODO: this does not check for multiple occurrences
-            #
-            del self.converter_list[converter_names.index(name)]
+            del self.converter_dict[name]
 
             self.rebuild_container_dict()
 
@@ -386,7 +382,7 @@ class Simulation:
 
         self.container_dict = {}
 
-        for converter in self.converter_list:
+        for converter in self.converter_dict.values():
 
             for container in [x[0] for x in converter.source_tuples_list]:
 
@@ -408,7 +404,7 @@ class Simulation:
         """Advance one simulation step.
         """
 
-        for converter in self.converter_list:
+        for converter in self.converter_dict.values():
 
             converter.step()
 
@@ -450,7 +446,7 @@ class Simulation:
     node [fontsize={1}, fontname="{2}"] ;
 """.format(size, fontsize, fontname)]
 
-        for converter in self.converter_list:
+        for converter in self.converter_dict.values():
 
             # First the source containers
             #
@@ -491,4 +487,4 @@ class Simulation:
         """Readable string representation.
         """
 
-        return "<Simulation consisting of {0}>".format(str(self.converter_list))
+        return "<Simulation consisting of {0}>".format(list(self.converter_dict.values()))
