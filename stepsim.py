@@ -42,6 +42,18 @@ except AttributeError:
 
     LOGGER.addHandler(NullHandler())
 
+def log_to_stderr():
+    """Convenience function. Call this to activate logging to stderr.
+    """
+
+    LOGGER.addHandler(logging.StreamHandler())
+
+    # For less verbose output use logging.INFO
+    #
+    LOGGER.setLevel(logging.DEBUG)
+
+    return
+
 class Container:
     """A Container stores a discrete number of units of a single resource.
 
@@ -412,8 +424,9 @@ class Simulation:
 
     def save_dot(self, filename, size = 5, fontsize = 10, fontname = "Bitstream Vera Sans"):
         """Export the simulation graph into the Graphviz DOT graph language.
-           See http://www.graphviz.org/ for details.
            size, fontsize and fontname are DOT graph parameters.
+           Use for example dot -Tpng graph.dot > graph.png to render.
+           See http://www.graphviz.org/ for details.
         """
 
         dot_string_list = ["""digraph {{

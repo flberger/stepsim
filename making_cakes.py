@@ -21,7 +21,6 @@
 # Work started on 09 Feb 2011.
 
 import stepsim
-import logging
 
 # TODO: realistic times (steps = minutes)
 
@@ -29,12 +28,7 @@ def main():
 
     # Set up logger output
     #
-    logger = logging.getLogger("stepsim")
-    logger.addHandler(logging.StreamHandler())
-
-    # For more verbose output use logging.DEBUG
-    #
-    logger.setLevel(logging.INFO)
+    stepsim.log_to_stderr()
 
     # Let's try a more complicated example and make a cake.
 
