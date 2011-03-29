@@ -322,9 +322,9 @@ class Simulation:
            A list of Converters whose step() function will be called in
            Simulation.step().
 
-       Simulation.container_list
-           A list of Containers connected to the Converters, built for
-           convenience.
+       Simulation.container_dict
+           A convenience dict of Containers connected to the Converters, indexed
+           by their name.
 
        Simulation.step_counter
            An integer counting the steps that have been taken.
@@ -335,7 +335,7 @@ class Simulation:
         """
 
         self.converter_list = []
-        self.container_list = []
+        self.container_dict = {}
         self.step_counter = 0
 
         # Use the default procedure for each converter
@@ -353,7 +353,7 @@ class Simulation:
 
         LOGGER.debug("Adding converter '{0}' to simulation.".format(converter.name))
 
-        self.rebuild_container_list()
+        self.rebuild_container_dict()
 
         return
 
@@ -373,32 +373,34 @@ class Simulation:
             #
             del self.converter_list[converter_names.index(name)]
 
-            self.rebuild_container_list()
+            self.rebuild_container_dict()
 
         else:
             LOGGER.debug("'{0}' not found.".format(name))
 
         return
 
-    def rebuild_container_list(self):
-        """Rebuild Simulation.container_list from registered converters.
+    def rebuild_container_dict(self):
+        """Rebuild Simulation.container_dict from registered converters.
         """
 
-        self.container_list = []
+        self.container_dict = {}
 
         for converter in self.converter_list:
 
             for container in [x[0] for x in converter.source_tuples_list]:
 
-                if container not in self.container_list:
+                if container not in self.container_dict.values():
 
-                    self.container_list.append(container)
+                    self.container_dict[container.name] = container
 
-            if converter.target_units_tuple[0] not in self.container_list:
+            if converter.target_units_tuple[0] not in self.container_dict.values():
 
-                self.container_list.append(converter.target_units_tuple[0])
+                container = converter.target_units_tuple[0]
 
-        LOGGER.debug("Current containers: {0}".format([x.name for x in self.container_list]))
+                self.container_dict[container.name] = container
+
+        LOGGER.debug("Current containers: {0}".format(list(self.container_dict.keys())))
 
         return
 
@@ -432,7 +434,7 @@ class Simulation:
 
         LOGGER.info("--- Break condition met, simulation finished. ---------------")
         LOGGER.info("Final state after {0} steps:\n{1}".format(self.step_counter,
-                                                               "\n".join(map(lambda x: str(x), self.container_list))))
+                                                               "\n".join([str(x) for x in self.container_dict.values()])))
 
         return
 
