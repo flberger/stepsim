@@ -363,7 +363,7 @@ class Simulation:
            taken.
         """
 
-        if name in converter_dict.keys():
+        if name in self.converter_dict.keys():
 
             LOGGER.debug("Deleting converter '{0}' from simulation.".format(name))
 
