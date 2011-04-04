@@ -1,6 +1,15 @@
 NEWS for StepSim
 ================
 
+0.3.2
+-----
+
+Released on 04 April 2011.
+
+Replaced Simulation.container_list and Simulation.converter_list by dicts.
+Minor fixes.
+
+
 0.3.1
 -----
 
