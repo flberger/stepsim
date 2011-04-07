@@ -21,8 +21,9 @@
 # work started on 8 Februar 2010
 
 import distutils.core
+import os.path
 
-VERSION = "0.3.2"
+VERSION = "0.4.0"
 LONG_DESCRIPTION = """About
 -----
 
@@ -118,18 +119,53 @@ We are ready to create a simulation:
     >>> s
     <Simulation consisting of [<buyer: converting from ['cashbox'] to storage>]>
 
-You can now step through the simulation or simply let it run until an
-end condition is satisfied. In this case we let it run until the buyer
-can not buy any more parts:
+The step() method is used to advance the simulation by one step:
 
 ::
 
-    >>> s.run(lambda : not buyer.last_step_successful)
-    Starting simulation.
-    --- Step 1: -----------------------------------------------
+    >>> s.step()
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
     Active Container of buyer: <cashbox: 7 EUR in stock>
+
+It is also possible to check conditions inbetween. The simulation
+instance offers a convenience method to do this using a string
+describing the condition:
+
+::
+
+    >>> s.check("cashbox == 10")
+    False
+    >>> s.check("cashbox != 10")
+    True
+    >>> s.check("storage >= 0")
+    True
+
+It is possible to evaluate how many steps it will take until a certain
+condition is met:
+
+::
+
+    >>> stepsim.be_quiet()
+    >>> s.estimate_finish("storage == 2", 100)
+    8
+
+A maximum step value will prevent hanging on impossible conditions:
+
+::
+
+    >>> s.estimate_finish("cashbox < 1", 100)
+    100
+
+You can now step on through the simulation or simply let it run from the
+current state until an end condition is satisfied. In this case we let
+it run until the buyer can not buy any more parts:
+
+::
+
+    >>> stepsim.log_to_stdout()
+    >>> s.run(lambda : not buyer.last_step_successful)
+    Starting simulation.
     --- Step 2: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
     Active Container of buyer: None
@@ -217,7 +253,7 @@ distutils.core.setup(name = "stepsim",
                      version = VERSION,
                      author = "Florian Berger",
                      author_email = "fberger@florian-berger.de",
-                     url = "http://florian-berger.de/en/software/stepsim/",
+                     url = "http://florian-berger.de/en/software/stepsim",
                      description = "StepSim - Python Step-based Simulation Package",
                      long_description = LONG_DESCRIPTION,
                      license = "GPL",
@@ -226,5 +262,7 @@ distutils.core.setup(name = "stepsim",
                      requires = [],
                      provides = ["stepsim"],
                      scripts = [],
-                     data_files = [("share/doc/stepsim/examples", ['making_cakes.py']),
-                                   ("share/doc/stepsim", ['COPYING', 'README', 'NEWS'])])
+                     data_files = [(os.path.join("share", "doc", "stepsim", "examples"),
+                                    ['making_cakes.py']),
+                                   (os.path.join("share", "doc", "stepsim"),
+                                    ['COPYING', 'README', 'NEWS'])])

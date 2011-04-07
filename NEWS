@@ -1,6 +1,17 @@
 NEWS for StepSim
 ================
 
+0.4.0
+-----
+
+Released on 07 April 2011.
+
+Added Simulation.check() to conveniently check a condition of the simulation 
+using a string. Added Simulation.estimate_finish() which creates a copy of the 
+Simulation instance and runs it until a break condition occurs. Added function 
+be_quiet() to stop logging to stderr and stdout.
+
+
 0.3.2
 -----
 
