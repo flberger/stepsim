@@ -82,16 +82,29 @@ We are ready to create a simulation:
     >>> s
     <Simulation consisting of [<buyer: converting from ['cashbox'] to storage>]>
 
-You can now step through the simulation or simply let it run until an end
-condition is satisfied. In this case we let it run until the buyer can not buy
-any more parts:
+The step() method is used to advance the simulation by one step:
 
-    >>> s.run(lambda : not buyer.last_step_successful)
-    Starting simulation.
-    --- Step 1: -----------------------------------------------
+    >>> s.step()
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
     Active Container of buyer: <cashbox: 7 EUR in stock>
+
+It is also possible to check conditions inbetween. The simulation instance
+offers a convenience method to do this using a string describing the condition:
+
+    >>> s.check("cashbox == 10")
+    False
+    >>> s.check("cashbox != 10")
+    True
+    >>> s.check("storage >= 0")
+    True
+
+You can now step on through the simulation or simply let it run from the current
+state until an end condition is satisfied. In this case we let it run until the
+buyer can not buy any more parts:
+
+    >>> s.run(lambda : not buyer.last_step_successful)
+    Starting simulation.
     --- Step 2: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
     Active Container of buyer: None

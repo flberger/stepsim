@@ -25,6 +25,7 @@
 
 import time
 import logging
+import re
 
 LOGGER = logging.getLogger("stepsim")
 
@@ -399,6 +400,52 @@ class Simulation:
         LOGGER.debug("Current containers: {0}".format(list(self.container_dict.keys())))
 
         return
+
+
+    def check(self, condition_string):
+        """Convenience function to check if a condition is True right now.
+
+           condition_string must be a string "NAME OPERATOR VALUE" where
+
+           - NAME is a valid key to Simulation.container_dict
+           - OPERATOR is one of ("<", ">", ">=", "<=", "==", "!=")
+           - VALUE is a number
+
+           Returns True if the condition is true, False otherwise.
+        """
+
+        # Taken from my Projektmanager game on 7 April 2011
+
+        match = re.match(r"^([^<>=!]+?)\s*([<>=!]{1,2})\s*(\w+)\s*$",
+                         condition_string)
+
+        if match is not None and len(match.groups()) == 3:
+
+            container, operator, value = match.groups()
+
+            if container not in self.container_dict.keys():
+
+                raise KeyError("break condition container '{0}' not in Simulation.container_dict".format(container))
+
+            # The regex above will let an invalid "<<" etc. pass, so check again
+            #
+            if operator not in ("<", ">", ">=", "<=", "==", "!="):
+
+                raise SyntaxError("break condition operator '{0}' is invalid".format(operator))
+
+            if not value.isnumeric():
+
+                raise TypeError("break condition value '{0}' is not a number".format(value))
+
+            # Still here? Then everything should be fine.
+            #
+            return eval('self.container_dict["{0}"].stock {1} {2}'.format(container,
+                                                                          operator,
+                                                                          value))
+
+        else:
+            raise SyntaxError("invalid condition string: '{0}'".format(condition_string))
+
 
     def step(self):
         """Advance one simulation step.
