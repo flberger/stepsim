@@ -26,6 +26,8 @@
 import time
 import logging
 import re
+import copy
+from sys import stdout
 
 LOGGER = logging.getLogger("stepsim")
 
@@ -43,11 +45,14 @@ except AttributeError:
 
     LOGGER.addHandler(NullHandler())
 
+STDERR_HANDLER = logging.StreamHandler()
+STDOUT_HANLDER = logging.StreamHandler(stdout)
+
 def log_to_stderr():
     """Convenience function. Call this to activate logging to stderr.
     """
 
-    LOGGER.addHandler(logging.StreamHandler())
+    LOGGER.addHandler(STDERR_HANDLER)
 
     # For less verbose output use logging.INFO
     #
@@ -59,13 +64,20 @@ def log_to_stdout():
     """Convenience function. Call this to activate logging to stdout.
     """
 
-    from sys import stdout
-
-    LOGGER.addHandler(logging.StreamHandler(stdout))
+    LOGGER.addHandler(STDOUT_HANLDER)
 
     # For less verbose output use logging.INFO
     #
     LOGGER.setLevel(logging.DEBUG)
+
+    return
+
+def be_quiet():
+    """Convenienve function. Call this to deactivate logging.
+    """
+
+    LOGGER.removeHandler(STDERR_HANDLER)
+    LOGGER.removeHandler(STDOUT_HANLDER)
 
     return
 
@@ -480,6 +492,56 @@ class Simulation:
                                                                "\n".join([str(x) for x in self.container_dict.values()])))
 
         return
+
+    def estimate_finish(self, condition_string, max_steps):
+        """Return the total number of steps after which this Simulation instace will meet condition_string.
+
+           condition_string must be a string suitable for submission to
+           Simulation.check().
+
+           max_steps must be an integer giving the number of steps after which
+           the simulation should be canceled.
+
+           This method will create a copy of the Simulation instance and not
+           alter the original instance in any way.
+        """
+
+        # Taken from my Projektmanager game on 7 April 2011
+
+        # First check if the condition has already been met.
+        # This will also raise Exceptions if condition_string is malformed or
+        # the container is not found.
+        #
+        if self.check(condition_string):
+
+            # TODO: this is actually not true since the counter can be advanced although the condition has already been met before
+            #
+            return self.step_counter
+
+        else:
+
+            sim_copy = copy.deepcopy(self)
+
+            # Build a new break condition test.
+            # Now that condition_string passed the regexes in check(), we use a
+            # much simpler approach.
+            #
+            container, operator, value = condition_string.split()
+
+            finish_test = 'lambda: sim_copy.container_dict["{0}"].stock {1} {2} or sim_copy.step_counter >= {3}'
+
+            finish_test = finish_test.format(container,
+                                             operator,
+                                             value,
+                                             max_steps)
+
+            # Make sure sim_copy is found in eval()
+            #
+            finish_test = eval(finish_test, {"sim_copy": sim_copy})
+
+            sim_copy.run(finish_test)
+
+            return sim_copy.step_counter
 
     def save_dot(self, filename, size = 5, fontsize = 10, fontname = "Bitstream Vera Sans"):
         """Export the simulation graph into the Graphviz DOT graph language.

@@ -99,10 +99,23 @@ offers a convenience method to do this using a string describing the condition:
     >>> s.check("storage >= 0")
     True
 
+It is possible to evaluate how many steps it will take until a certain condition
+is met:
+
+    >>> stepsim.be_quiet()
+    >>> s.estimate_finish("storage == 2", 100)
+    8
+
+A maximum step value will prevent hanging on impossible conditions:
+
+    >>> s.estimate_finish("cashbox < 1", 100)
+    100
+
 You can now step on through the simulation or simply let it run from the current
 state until an end condition is satisfied. In this case we let it run until the
 buyer can not buy any more parts:
 
+    >>> stepsim.log_to_stdout()
     >>> s.run(lambda : not buyer.last_step_successful)
     Starting simulation.
     --- Step 2: -----------------------------------------------
