@@ -23,7 +23,7 @@
 import distutils.core
 import os.path
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 LONG_DESCRIPTION = """About
 -----
 
@@ -94,6 +94,7 @@ To get verbose output, activate logging to console:
 ::
 
     >>> stepsim.log_to_stdout()
+    >>> stepsim.loglevel("debug")
 
 Now create some containers:
 
@@ -109,10 +110,31 @@ Then create a converter and set up the draw-deliver-ratio:
     >>> buyer = stepsim.Converter("buyer", 2, (cashbox, 3), (storage, 1))
     buyer: Adding source 'cashbox', drawing 3 EUR per step.
 
-We are ready to create a simulation:
+From any list of converters, we can get a list of simulation milestones
+that lead to an end condition (without actually running a simulation):
 
 ::
 
+    >>> stepsim.loglevel("info")
+    >>> stepsim.milestones("storage == 3", [buyer])
+    ------------------------------
+    Milestones to achieve storage == 3:
+    <BLANKLINE>
+    Milestone:
+    9 EUR in cashbox (10 in stock, 111.11%)
+    total: 111.11%
+    <BLANKLINE>
+    Milestone:
+    3.0 parts in storage (0 in stock, 0.0%)
+    total: 0.0%
+    ------------------------------
+    [<Milestone (cashbox: 9) 111.11%>, <Milestone (storage: 3.0) 0.0%>]
+
+Let's create a simulation:
+
+::
+
+    >>> stepsim.loglevel("debug")
     >>> s = stepsim.Simulation(buyer)
     Adding converter 'buyer' to simulation.
     Current containers: ['cashbox', 'storage']
@@ -123,10 +145,9 @@ The step() method is used to advance the simulation by one step:
 
 ::
 
+    >>> stepsim.loglevel("info")
     >>> s.step()
-    buyer: Ready to draw resources
-    buyer: Drawing 3 EUR from cashbox. cashbox has 7 EUR left now.
-    Active Container of buyer: <cashbox: 7 EUR in stock>
+    buyer: Drawing 3 EUR from cashbox.
 
 It is also possible to check conditions inbetween. The simulation
 instance offers a convenience method to do this using a string
@@ -150,7 +171,8 @@ condition is met:
     >>> s.estimate_finish("storage == 2", 100)
     8
 
-A maximum step value will prevent hanging on impossible conditions:
+Behind the scenes, this will run a copy of the simulation. A maximum
+step value will prevent hanging on impossible conditions:
 
 ::
 
@@ -164,6 +186,7 @@ it run until the buyer can not buy any more parts:
 ::
 
     >>> stepsim.log_to_stdout()
+    >>> stepsim.loglevel("debug")
     >>> s.run(lambda : not buyer.last_step_successful)
     Starting simulation.
     --- Step 2: -----------------------------------------------
@@ -173,11 +196,13 @@ it run until the buyer can not buy any more parts:
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
     --- Step 4: -----------------------------------------------
-    buyer: Delivering 1 parts to storage. storage stock is 1 parts now.
+    buyer: Delivering 1 parts to storage.
+    storage stock is 1 parts now.
     Active Container of buyer: <storage: 1 parts in stock>
     --- Step 5: -----------------------------------------------
     buyer: Ready to draw resources
-    buyer: Drawing 3 EUR from cashbox. cashbox has 4 EUR left now.
+    buyer: Drawing 3 EUR from cashbox.
+    cashbox has 4 EUR left now.
     Active Container of buyer: <cashbox: 4 EUR in stock>
     --- Step 6: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
@@ -186,11 +211,13 @@ it run until the buyer can not buy any more parts:
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
     --- Step 8: -----------------------------------------------
-    buyer: Delivering 1 parts to storage. storage stock is 2 parts now.
+    buyer: Delivering 1 parts to storage.
+    storage stock is 2 parts now.
     Active Container of buyer: <storage: 2 parts in stock>
     --- Step 9: -----------------------------------------------
     buyer: Ready to draw resources
-    buyer: Drawing 3 EUR from cashbox. cashbox has 1 EUR left now.
+    buyer: Drawing 3 EUR from cashbox.
+    cashbox has 1 EUR left now.
     Active Container of buyer: <cashbox: 1 EUR in stock>
     --- Step 10: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
@@ -199,7 +226,8 @@ it run until the buyer can not buy any more parts:
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
     --- Step 12: -----------------------------------------------
-    buyer: Delivering 1 parts to storage. storage stock is 3 parts now.
+    buyer: Delivering 1 parts to storage.
+    storage stock is 3 parts now.
     Active Container of buyer: <storage: 3 parts in stock>
     --- Step 13: -----------------------------------------------
     buyer: Ready to draw resources
@@ -246,7 +274,7 @@ StepSim is licensed under the GPL. See the file COPYING for details.
 Author
 ------
 
-(c) Florian Berger
+Florian Berger
 """
 
 distutils.core.setup(name = "stepsim",
