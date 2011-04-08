@@ -29,6 +29,7 @@ def main():
     # Set up logger output
     #
     stepsim.log_to_stderr()
+    stepsim.loglevel("info")
 
     # Let's try a more complicated example and make a cake.
 
@@ -62,7 +63,7 @@ def main():
     dough_maker_fast.draw_from(milk, 125)
 
     oven_1 = stepsim.Converter("Oven 1", 9, (dough, 1000), (cakes, 1))
-    #oven_2 = stepsim.Converter("Oven 2", 9, (dough, 1000), (cakes, 1))
+    oven_2 = stepsim.Converter("Oven 2", 9, (dough, 1000), (cakes, 1))
 
     making_cakes = stepsim.Simulation(butter_buyer,
                                       sugar_buyer,
@@ -74,17 +75,41 @@ def main():
     making_cakes.add_converter(dough_maker_fast)
 
     making_cakes.add_converter(oven_1)
-    #making_cakes.add_converter(oven_2)
+    making_cakes.add_converter(oven_2)
+
+    print(str(stepsim.milestones("Cakes == 10", making_cakes.converter_dict.values())))
+
+    try:
+        raw_input("Press [RETURN] to continue:")
+
+    except NameError:
+
+        # Python 3, eh?
+        #
+        input("Press [RETURN] to continue:")
 
     # Run simulation
     #
-    making_cakes.run(lambda : cakes.stock == 10, delay = 0.5)
+    making_cakes.run(lambda : cakes.stock >= 5, delay = 0)
+
+    print(str(stepsim.milestones("Cakes == 10", making_cakes.converter_dict.values())))
+
+    try:
+        raw_input("Press [RETURN] to continue:")
+
+    except NameError:
+
+        input("Press [RETURN] to continue:")
+
+    making_cakes.run(lambda : cakes.stock >= 10, delay = 0)
+
+    print(str(stepsim.milestones("Cakes == 10", making_cakes.converter_dict.values())))
 
     # Or try:
     #
     #making_cakes.run(lambda : making_cakes.step_counter == 1000)
 
-    making_cakes.save_dot("making_cakes.dot")
+    #making_cakes.save_dot("making_cakes.dot")
 
 if __name__ == "__main__":
 

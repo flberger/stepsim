@@ -31,6 +31,8 @@ from sys import stdout
 
 LOGGER = logging.getLogger("stepsim")
 
+LOGGER.setLevel(logging.WARNING)
+
 try:
     LOGGER.addHandler(logging.NullHandler())
 
@@ -54,10 +56,6 @@ def log_to_stderr():
 
     LOGGER.addHandler(STDERR_HANDLER)
 
-    # For less verbose output use logging.INFO
-    #
-    LOGGER.setLevel(logging.DEBUG)
-
     return
 
 def log_to_stdout():
@@ -66,9 +64,24 @@ def log_to_stdout():
 
     LOGGER.addHandler(STDOUT_HANLDER)
 
-    # For less verbose output use logging.INFO
-    #
-    LOGGER.setLevel(logging.DEBUG)
+    return
+
+def loglevel(level):
+    """Convenienve function. Level must be one of ("critical", "error", "warning", "info", "debug").
+    """
+
+    level_dict = {"critical": logging.CRITICAL,
+                  "error": logging.ERROR,
+                  "warning": logging.WARNING,
+                  "info": logging.INFO,
+                  "debug": logging.DEBUG}
+
+    if level not in level_dict.keys():
+
+        raise Exception("invalid log level: {0}".format(level))
+
+    else:
+        LOGGER.setLevel(level_dict[level])
 
     return
 
@@ -144,6 +157,14 @@ class Converter:
     """A Converter drains units from one or more Containers and stores the result in another Container.
 
        Attributes:
+
+       Converter.source_tuples_list
+           A list of tuples (Container, integer) giving the source containers
+           and the number of units to draw.
+
+       Converter.target_units_tuple
+           A tuple (Container, integer) giving the target container and the
+           number of units to deliver.
 
        Converter.name
            A string holding the name of this Converter.
@@ -254,12 +275,14 @@ class Converter:
 
                     if units_drawn == tuple[1]:
 
-                        msg = "{0}: Drawing {1} {2} from {3}. {3} has {4} {2} left now."
-                        LOGGER.info(msg.format(self.name,
-                                    tuple[1],
-                                    tuple[0].type,
-                                    tuple[0].name,
-                                    tuple[0].stock))
+                        LOGGER.info("{0}: Drawing {1} {2} from {3}.".format(self.name,
+                                                                            tuple[1],
+                                                                            tuple[0].type,
+                                                                            tuple[0].name))
+
+                        LOGGER.debug("{0} has {1} {2} left now.".format(tuple[0].name,
+                                                                        tuple[0].stock,
+                                                                        tuple[0].type))
 
                     else:
                         # Due to the test above, this should not happen
@@ -293,12 +316,14 @@ class Converter:
                 #
                 self.active_container = self.target_units_tuple[0]
 
-                msg = "{0}: Delivering {1} {2} to {3}. {3} stock is {4} {2} now."
-                LOGGER.info(msg.format(self.name,
-                                       self.target_units_tuple[1],
-                                       self.target_units_tuple[0].type,
-                                       self.target_units_tuple[0].name,
-                                       self.target_units_tuple[0].stock))
+                LOGGER.info("{0}: Delivering {1} {2} to {3}.".format(self.name,
+                                                                     self.target_units_tuple[1],
+                                                                     self.target_units_tuple[0].type,
+                                                                     self.target_units_tuple[0].name))
+
+                LOGGER.debug("{0} stock is {1} {2} now.".format(self.target_units_tuple[0].name,
+                                                                self.target_units_tuple[0].stock,
+                                                                self.target_units_tuple[0].type))
 
                 self.countdown = -1
 
@@ -325,6 +350,113 @@ class Converter:
         return "<{0}: converting from {1} to {2}>".format(self.name,
                                                           str(list(map(lambda x: x[0].name, self.source_tuples_list))),
                                                           self.target_units_tuple[0].name)
+
+class Milestone:
+    """A Milestone incorporates information to be returned by Simulation.milestones().
+    """
+
+    def __init__(self):
+        """Initialise.
+        """
+
+        self.container_value_dict = {}
+
+        return
+
+    def add(self, container, value):
+        """Add required units for the container.
+        """
+
+        if container in self.container_value_dict.keys():
+
+            self.container_value_dict[container] = self.container_value_dict[container] + value
+
+        else:
+            self.container_value_dict[container] = value
+
+        return
+
+    def containers(self):
+        """Return a list of the containers in Milestone.container_value_dict.
+        """
+
+        # This could be done much more convenient in Python 3, but alas.
+
+        return list(self.container_value_dict.keys())
+
+    def units(self, container):
+        """Convenience method, equivalent to Milestone.container_value_dict[container].
+        """
+
+        return self.container_value_dict[container]
+
+    def percent(self, container):
+        """Return the percentage of completeness of the container.
+        """
+
+        if container in self.containers():
+
+            # Explicit float conversion for Python 2.6
+            #
+            return float(container.stock) / float(self.units(container)) * 100.0
+
+        else:
+            raise KeyError("Container {0} not in Milestone.container_value_dict".format(container))
+
+    def total_percent(self):
+        """Return the percentage of completeness of this milestone.
+        """
+
+        if not self.containers():
+
+            return 0
+
+        else:
+
+            percent_sum = sum([self.percent(container) for container in self.containers()])
+
+            # Explicit float conversion for Python 2.6
+            #
+            return float(percent_sum) / float(len(self.containers()))
+
+    def __len__(self):
+        """Implemented for truth value testing.
+           Returns len(self.container_value_dict).
+        """
+        # In Python 2.6 there is object.__nonzero__(), in Python 3.x there
+        # is object.__bool__(). Both fall back to object.__len__(), so we
+        # implement this.
+
+        return len(self.container_value_dict)
+
+    def __repr__(self):
+        """Readable, but not official string representation.
+        """
+
+        container_value_list = ["{0}: {1}".format(container.name, self.units(container)) for container in self.containers()]
+
+        return "<Milestone ({0}) {1}%>".format(", ".join(container_value_list),
+                                             round(self.total_percent(), 2))
+
+    def __str__(self):
+        """Elaborate, inofficial string representation.
+        """
+
+        return_str = "\nMilestone:\n"
+
+        msg = "{0} {1} in {2} ({3} in stock, {4}%)\n"
+
+        for container in self.containers():
+
+            return_str = return_str + msg.format(self.units(container),
+                                                 container.type,
+                                                 container.name,
+                                                 container.stock,
+                                                 round(self.percent(container), 2))
+
+        return_str = return_str + "total: {0}%".format(round(self.total_percent(), 2))
+
+        return return_str
 
 class Simulation:
     """A Simulation wraps a graph of Containers and Converters and runs the simulation step-by-step.
@@ -413,9 +545,8 @@ class Simulation:
 
         return
 
-
-    def check(self, condition_string):
-        """Convenience function to check if a condition is True right now.
+    def parse_condition_string(self, condition_string):
+        """Check condition_string for validity and return the components.
 
            condition_string must be a string "NAME OPERATOR VALUE" where
 
@@ -423,7 +554,7 @@ class Simulation:
            - OPERATOR is one of ("<", ">", ">=", "<=", "==", "!=")
            - VALUE is a number
 
-           Returns True if the condition is true, False otherwise.
+           Returns a three-string tuple (container, operator, value).
         """
 
         # Taken from my Projektmanager game on 7 April 2011
@@ -437,7 +568,8 @@ class Simulation:
 
             if container not in self.container_dict.keys():
 
-                raise KeyError("break condition container '{0}' not in Simulation.container_dict".format(container))
+                raise KeyError("container '{0}' not in Simulation.container_dict: {1}".format(container,
+                                                                                                              list(self.container_dict.keys())))
 
             # The regex above will let an invalid "<<" etc. pass, so check again
             #
@@ -445,19 +577,31 @@ class Simulation:
 
                 raise SyntaxError("break condition operator '{0}' is invalid".format(operator))
 
-            if not value.isnumeric():
+            if not value.isdigit():
 
                 raise TypeError("break condition value '{0}' is not a number".format(value))
 
             # Still here? Then everything should be fine.
             #
-            return eval('self.container_dict["{0}"].stock {1} {2}'.format(container,
-                                                                          operator,
-                                                                          value))
+            return (container, operator, value)
 
         else:
             raise SyntaxError("invalid condition string: '{0}'".format(condition_string))
 
+    def check(self, condition_string):
+        """Convenience function to check if a condition is True right now.
+
+           condition_string must be a string suitable for submission to
+           Simulation.parse_condition_string().
+
+           Returns True if the condition is true, False otherwise.
+        """
+
+        container, operator, value = self.parse_condition_string(condition_string)
+
+        return eval('self.container_dict["{0}"].stock {1} {2}'.format(container,
+                                                                      operator,
+                                                                      value))
 
     def step(self):
         """Advance one simulation step.
@@ -497,7 +641,7 @@ class Simulation:
         """Return the total number of steps after which this Simulation instace will meet condition_string.
 
            condition_string must be a string suitable for submission to
-           Simulation.check().
+           Simulation.parse_condition_string().
 
            max_steps must be an integer giving the number of steps after which
            the simulation should be canceled.
@@ -509,8 +653,6 @@ class Simulation:
         # Taken from my Projektmanager game on 7 April 2011
 
         # First check if the condition has already been met.
-        # This will also raise Exceptions if condition_string is malformed or
-        # the container is not found.
         #
         if self.check(condition_string):
 
@@ -523,10 +665,8 @@ class Simulation:
             sim_copy = copy.deepcopy(self)
 
             # Build a new break condition test.
-            # Now that condition_string passed the regexes in check(), we use a
-            # much simpler approach.
             #
-            container, operator, value = condition_string.split()
+            container, operator, value = self.parse_condition_string(condition_string)
 
             finish_test = 'lambda: sim_copy.container_dict["{0}"].stock {1} {2} or sim_copy.step_counter >= {3}'
 
@@ -597,3 +737,144 @@ class Simulation:
         """
 
         return "<Simulation consisting of {0}>".format(list(self.converter_dict.values()))
+
+def milestones(condition_string, converter_list):
+    """Return an ordered list of Milestone instances that represents milestones to meet the condition.
+
+       condition_string must be a string suitable for submission to
+       Simulation.parse_condition_string().
+
+       The operator in the string must be "==".
+
+       converter_list must be a list of Converters that should be searched for
+       contributions to Milestones.
+
+       If no Milestones can be computed for this condition, an empty list is
+       returned.
+    """
+
+    # This is not an Simulation instance method to be able to compute Milestones
+    # for Converters that are not part of the Simulation.
+
+    milestones = []
+
+    # Build a new Simulation, which will extract containers etc.
+    #
+    simulation = Simulation()
+
+    for converter in converter_list:
+
+        simulation.add_converter(converter)
+
+    # Will abort on malformed condition_string
+    #
+    try:
+
+        container_name, operator, value = simulation.parse_condition_string(condition_string)
+
+    except KeyError:
+
+        return []
+
+    if operator not in ("==", ">="):
+
+        raise Exception("operator '{0}' not supported by this method".format(operator))
+
+    # Final milestone is the break condition
+    #
+    current_milestone = Milestone()
+
+    # TODO: using float(). stepsim should clarify whether it is discrete or not.
+    #
+    current_milestone.add(simulation.container_dict[container_name], float(value))
+
+    while current_milestone:
+
+        LOGGER.debug("adding current milestone {0}".format(repr(current_milestone)))
+
+        milestones = [current_milestone] + milestones
+
+        new_milestone = Milestone()
+
+        for milestone_container in current_milestone.containers():
+
+            LOGGER.debug("looking for contributors to '{0}'".format(milestone_container.name))
+
+            contributors = []
+
+            for converter in simulation.converter_dict.values():
+
+                if converter.target_units_tuple[0] == milestone_container:
+
+                    LOGGER.debug("found contributor '{0}'".format(converter.name))
+
+                    contributors.append(converter)
+
+            # Any contributors?
+            #
+            if not contributors:
+
+                LOGGER.debug("no contributors, aborting")
+
+                break
+
+            # Now we know who contributes to achieving this part of the
+            # milestone. We use them round robin until the demanded value
+            # is fulfilled.
+            #
+            units_produced = 0
+
+            while units_produced < current_milestone.units(milestone_container):
+
+                msg = "processing converters, {0} of {1} units produced so far"
+
+                LOGGER.debug(msg.format(units_produced,
+                                        current_milestone.units(milestone_container)))
+
+                for converter in contributors:
+
+                    LOGGER.debug("converter '{0}'".format(converter.name))
+
+                    # Save source container units
+                    #
+                    for source_unit_tuple in converter.source_tuples_list:
+
+                        new_milestone.add(source_unit_tuple[0], source_unit_tuple[1])
+
+                        LOGGER.debug("new milestone is currently {0}".format(repr(new_milestone)))
+
+                    # Deliver target units
+                    #
+                    units_produced = units_produced + converter.target_units_tuple[1]
+
+                    # Already satisfied?
+                    #
+                    if units_produced >= current_milestone.units(milestone_container):
+
+                        msg = "{0} of {1} units produced, aborting"
+
+                        LOGGER.debug(msg.format(units_produced,
+                                                current_milestone.units(milestone_container)))
+
+                        break
+
+            # Enough target units of milestone_container produced.
+
+        # Processed all of current_milestone.keys()
+
+        current_milestone = new_milestone
+
+        LOGGER.debug("setting current milestone to new milestone {0}".format(repr(current_milestone)))
+
+    # current_milestone is False, all possible milestones collected
+
+    LOGGER.info("------------------------------")
+    LOGGER.info("Milestones to achieve {0}:".format(condition_string))
+
+    for milestone in milestones:
+
+        LOGGER.info(str(milestone))
+
+    LOGGER.info("------------------------------")
+
+    return milestones
