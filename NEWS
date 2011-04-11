@@ -1,6 +1,15 @@
 NEWS for StepSim
 ================
 
+0.5.1
+-----
+
+Released on 11 April 2011.
+
+Added Converter.revert() which reverts the last draw performed by the converter. 
+It is called before a converter is removed from a simulation.
+
+
 0.5.0
 -----
 
