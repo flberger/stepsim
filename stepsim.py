@@ -305,6 +305,7 @@ class Converter:
         elif self.countdown == 0:
 
             # Still going?
+            # TODO: obsolete check? Remove?
             #
             if self.last_step_successful:
 
@@ -340,6 +341,30 @@ class Converter:
 
         LOGGER.debug("Active Container of {0}: {1}".format(self.name,
                                                            self.active_container))
+
+        return
+
+    def revert(self):
+        """Undo the last draw action taken by this Converter.
+           Usually called from Simulation.remove_converter().
+        """
+
+        LOGGER.info("reverting last draw from '{0}'".format(self.name))
+
+        if self.countdown >= 0:
+
+            # This time, deliver to source Containers
+            #
+            for tuple in self.source_tuples_list:
+
+                LOGGER.info("{0}: returning {1} {2} to {3}.".format(self.name,
+                                                                    tuple[1],
+                                                                    tuple[0].type,
+                                                                    tuple[0].name))
+
+                units_drawn = tuple[0].deliver(tuple[1])
+
+        self.countdown = -1
 
         return
 
@@ -510,14 +535,18 @@ class Simulation:
 
         if name in self.converter_dict.keys():
 
-            LOGGER.debug("Deleting converter '{0}' from simulation.".format(name))
+            # Undo last draw
+            #
+            self.converter_dict[name].revert()
+
+            LOGGER.debug("Removing converter '{0}' from simulation.".format(name))
 
             del self.converter_dict[name]
 
             self.rebuild_container_dict()
 
         else:
-            LOGGER.debug("'{0}' not found.".format(name))
+            LOGGER.error("Cannot remove '{0}', Converter not found.".format(name))
 
         return
 
