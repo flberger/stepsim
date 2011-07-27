@@ -6,3 +6,4 @@ dist
 *.png
 README.rst
 build
+__pycache__

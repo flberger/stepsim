@@ -430,6 +430,10 @@ class Milestone:
 
     def total_percent(self):
         """Return the percentage of completeness of this milestone.
+
+           Should a self.percent(container) call return more than 100 percent,
+           100 will be used instead, so this method will always return a value
+           between 0 and 100.
         """
 
         if not self.containers():
@@ -438,7 +442,19 @@ class Milestone:
 
         else:
 
-            percent_sum = sum([self.percent(container) for container in self.containers()])
+            percent_sum = 0
+
+            for container in self.containers():
+
+                percent_value = self.percent(container)
+
+                if percent_value > 100:
+
+                    percent_sum = percent_sum + 100
+
+                else:
+
+                    percent_sum = percent_sum + percent_value
 
             # Explicit float conversion for Python 2.6
             #
@@ -714,8 +730,15 @@ class Simulation:
 
     def save_dot(self, filename, size = 5, fontsize = 10, fontname = "Bitstream Vera Sans"):
         """Export the simulation graph into the Graphviz DOT graph language.
+
            size, fontsize and fontname are DOT graph parameters.
-           Use for example dot -Tpng graph.dot > graph.png to render.
+
+           Use for example
+
+               $ dot -Tpng graph.dot > graph.png
+
+           to render.
+
            See http://www.graphviz.org/ for details.
         """
 
@@ -767,7 +790,7 @@ class Simulation:
 
         return "<Simulation consisting of {0}>".format(list(self.converter_dict.values()))
 
-def milestones(condition_string, converter_list):
+def milestones(condition_string, converter_list, graph_export = None):
     """Return an ordered list of Milestone instances that represents milestones to meet the condition.
 
        condition_string must be a string suitable for submission to
@@ -777,6 +800,9 @@ def milestones(condition_string, converter_list):
 
        converter_list must be a list of Converters that should be searched for
        contributions to Milestones.
+
+       If graph_export is given, it must be file name to call
+       Simulation.save_dot() with.
 
        If no Milestones can be computed for this condition, an empty list is
        returned.
@@ -794,6 +820,14 @@ def milestones(condition_string, converter_list):
     for converter in converter_list:
 
         simulation.add_converter(converter)
+
+    if graph_export is not None:
+
+        LOGGER.debug("saving graph file to '{}'".format(graph_export))
+
+        # Estimate size by rule of thumb from number of converters
+        #
+        simulation.save_dot(graph_export, size = len(converter_list))
 
     # Will abort on malformed condition_string
     #

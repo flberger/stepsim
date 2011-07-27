@@ -90,7 +90,7 @@ def main():
 
     # Run simulation
     #
-    making_cakes.run(lambda : cakes.stock >= 5, delay = 0)
+    making_cakes.run(lambda : cakes.stock >= 5, delay = 0.5)
 
     print(str(stepsim.milestones("Cakes == 10", making_cakes.converter_dict.values())))
 
@@ -101,7 +101,7 @@ def main():
 
         input("Press [RETURN] to continue:")
 
-    making_cakes.run(lambda : cakes.stock >= 10, delay = 0)
+    making_cakes.run(lambda : cakes.stock >= 10, delay = 0.5)
 
     print(str(stepsim.milestones("Cakes == 10", making_cakes.converter_dict.values())))
 

@@ -22,12 +22,14 @@ user_install:
 	$(PYTHON) setup.py install --user
 
 commit.txt: Makefile making_cakes.py README setup.py stepsim.py
-	bzr diff > commit.txt
+	# single line because bzr diff returns false when there are diffs
+	#
+	bzr diff > commit.txt ; nano commit.txt
 
 commit:
 	@echo RETURN to commit using commit.txt, CTRL-C to cancel:
 	@read DUMMY
-	bzr commit --file commit.txt && echo > commit.txt
+	bzr commit --file commit.txt && rm -vf commit.txt
 
 xclip:
 	pandoc --strict README | xclip
