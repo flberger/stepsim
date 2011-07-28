@@ -378,6 +378,14 @@ class Converter:
 
 class Milestone:
     """A Milestone incorporates information to be returned by Simulation.milestones().
+
+       Attributes:
+
+       Milestone.container_value_dict
+           A dict mapping container instances to the required number of units.
+
+       Milestone.containers
+           A list of containers in order of their addition.
     """
 
     def __init__(self):
@@ -385,11 +393,12 @@ class Milestone:
         """
 
         self.container_value_dict = {}
+        self.containers = []
 
         return
 
     def add(self, container, value):
-        """Add required units for the container.
+        """Add or increase required number of units for the container.
         """
 
         if container in self.container_value_dict.keys():
@@ -397,17 +406,12 @@ class Milestone:
             self.container_value_dict[container] = self.container_value_dict[container] + value
 
         else:
+
             self.container_value_dict[container] = value
 
+            self.containers.append(container)
+
         return
-
-    def containers(self):
-        """Return a list of the containers in Milestone.container_value_dict.
-        """
-
-        # This could be done much more convenient in Python 3, but alas.
-
-        return list(self.container_value_dict.keys())
 
     def units(self, container):
         """Convenience method, equivalent to Milestone.container_value_dict[container].
@@ -419,7 +423,7 @@ class Milestone:
         """Return the percentage of completeness of the container.
         """
 
-        if container in self.containers():
+        if container in self.containers:
 
             # Explicit float conversion for Python 2.6
             #
@@ -436,7 +440,7 @@ class Milestone:
            between 0 and 100.
         """
 
-        if not self.containers():
+        if not self.containers:
 
             return 0
 
@@ -444,7 +448,7 @@ class Milestone:
 
             percent_sum = 0
 
-            for container in self.containers():
+            for container in self.containers:
 
                 percent_value = self.percent(container)
 
@@ -458,7 +462,7 @@ class Milestone:
 
             # Explicit float conversion for Python 2.6
             #
-            return float(percent_sum) / float(len(self.containers()))
+            return float(percent_sum) / float(len(self.containers))
 
     def __len__(self):
         """Implemented for truth value testing.
@@ -474,10 +478,10 @@ class Milestone:
         """Readable, but not official string representation.
         """
 
-        container_value_list = ["{0}: {1}".format(container.name, self.units(container)) for container in self.containers()]
+        container_value_list = ["{0}: {1}".format(container.name, self.units(container)) for container in self.containers]
 
         return "<Milestone ({0}) {1}%>".format(", ".join(container_value_list),
-                                             round(self.total_percent(), 2))
+                                               round(self.total_percent(), 2))
 
     def __str__(self):
         """Elaborate, inofficial string representation.
@@ -487,7 +491,7 @@ class Milestone:
 
         msg = "{0} {1} in {2} ({3} in stock, {4}%)\n"
 
-        for container in self.containers():
+        for container in self.containers:
 
             return_str = return_str + msg.format(self.units(container),
                                                  container.type,
@@ -508,6 +512,10 @@ class Simulation:
            A dict of Converters whose step() function will be called in
            Simulation.step(), indexed by their names.
 
+       Simulation.converter_list
+           A list of Converters names, in order of their addition to the
+           Simulation.
+
        Simulation.container_dict
            A convenience dict of Containers connected to the Converters, indexed
            by their names.
@@ -521,6 +529,7 @@ class Simulation:
         """
 
         self.converter_dict = {}
+        self.converter_list = []
         self.container_dict = {}
         self.step_counter = 0
 
@@ -536,6 +545,8 @@ class Simulation:
         """
 
         self.converter_dict[converter.name] = converter
+
+        self.converter_list.append(converter.name)
 
         LOGGER.debug("Adding converter '{0}' to simulation.".format(converter.name))
 
@@ -559,6 +570,8 @@ class Simulation:
 
             del self.converter_dict[name]
 
+            del self.converter_list[self.converter_list.index(name)]
+
             self.rebuild_container_dict()
 
         else:
@@ -572,7 +585,11 @@ class Simulation:
 
         self.container_dict = {}
 
-        for converter in self.converter_dict.values():
+        # Use self.converter_list in all iterations to be deterministic
+        #
+        for name in self.converter_list:
+
+            converter = self.converter_dict[name]
 
             for container in [x[0] for x in converter.source_tuples_list]:
 
@@ -614,7 +631,7 @@ class Simulation:
             if container not in self.container_dict.keys():
 
                 raise KeyError("container '{0}' not in Simulation.container_dict: {1}".format(container,
-                                                                                                              list(self.container_dict.keys())))
+                                                                                              list(self.container_dict.keys())))
 
             # The regex above will let an invalid "<<" etc. pass, so check again
             #
@@ -652,9 +669,11 @@ class Simulation:
         """Advance one simulation step.
         """
 
-        for converter in self.converter_dict.values():
+        # Use self.converter_list in all iterations to be deterministic
+        #
+        for name in self.converter_list:
 
-            converter.step()
+            self.converter_dict[name].step()
 
         self.step_counter = self.step_counter + 1
 
@@ -747,7 +766,11 @@ class Simulation:
     node [fontsize={1}, fontname="{2}"] ;
 """.format(size, fontsize, fontname)]
 
-        for converter in self.converter_dict.values():
+        # Use self.converter_list in all iterations to be deterministic
+        #
+        for name in self.converter_list:
+
+            converter = self.converter_dict[name]
 
             # First the source containers
             #
@@ -787,8 +810,15 @@ class Simulation:
     def __repr__(self):
         """Readable string representation.
         """
+        repr_list = []
 
-        return "<Simulation consisting of {0}>".format(list(self.converter_dict.values()))
+        # Use self.converter_list in all iterations to be deterministic
+        #
+        for name in self.converter_list:
+
+            repr_list.append(self.converter_dict[name])
+
+        return "<Simulation consisting of {0}>".format(repr_list)
 
 def milestones(condition_string, converter_list, graph_export = None):
     """Return an ordered list of Milestone instances that represents milestones to meet the condition.
@@ -817,9 +847,22 @@ def milestones(condition_string, converter_list, graph_export = None):
     #
     simulation = Simulation()
 
+    # Sort the converter list by converter name before adding, to be
+    # deterministic
+    #
+    name_converter_dict = {}
+
     for converter in converter_list:
 
-        simulation.add_converter(converter)
+        name_converter_dict[converter.name] = converter
+
+    name_list = list(name_converter_dict.keys())
+
+    name_list.sort()
+
+    for name in name_list:
+
+        simulation.add_converter(name_converter_dict[name])
 
     if graph_export is not None:
 
@@ -859,13 +902,17 @@ def milestones(condition_string, converter_list, graph_export = None):
 
         new_milestone = Milestone()
 
-        for milestone_container in current_milestone.containers():
+        for milestone_container in current_milestone.containers:
 
             LOGGER.debug("looking for contributors to '{0}'".format(milestone_container.name))
 
             contributors = []
 
-            for converter in simulation.converter_dict.values():
+            # Use self.converter_list in all iterations to be deterministic
+            #
+            for name in simulation.converter_list:
+
+                converter = simulation.converter_dict[name]
 
                 if converter.target_units_tuple[0] == milestone_container:
 
