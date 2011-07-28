@@ -29,6 +29,8 @@ import re
 import copy
 from sys import stdout
 
+VERSION = "0.5.1"
+
 LOGGER = logging.getLogger("stepsim")
 
 LOGGER.setLevel(logging.WARNING)

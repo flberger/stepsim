@@ -22,8 +22,8 @@
 
 import distutils.core
 import os.path
+import stepsim
 
-VERSION = "0.5.1"
 LONG_DESCRIPTION = """About
 -----
 
@@ -300,7 +300,7 @@ Florian Berger
 """
 
 distutils.core.setup(name = "stepsim",
-                     version = VERSION,
+                     version = stepsim.VERSION,
                      author = "Florian Berger",
                      author_email = "fberger@florian-berger.de",
                      url = "http://florian-berger.de/en/software/stepsim",
