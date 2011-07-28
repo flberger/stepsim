@@ -1,6 +1,17 @@
 NEWS for StepSim
 ================
 
+0.5.2
+-----
+
+Released on 28 July 2011.
+
+Stepsim is more deterministic now: milestone calculations will yield the same 
+results for identical input, no matter what the order of contributing 
+converters. Fixed total completeness percentage calculation for milestones.
+A .dot graph can now be exported from milestone calculations.
+
+
 0.5.1
 -----
 

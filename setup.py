@@ -122,13 +122,13 @@ that lead to an end condition (without actually running a simulation):
     <BLANKLINE>
     Milestone:
     9 EUR in cashbox (10 in stock, 111.11%)
-    total: 111.11%
+    total: 100.0%
     <BLANKLINE>
     Milestone:
     3.0 parts in storage (0 in stock, 0.0%)
     total: 0.0%
     ------------------------------
-    [<Milestone (cashbox: 9) 111.11%>, <Milestone (storage: 3.0) 0.0%>]
+    [<Milestone (cashbox: 9) 100.0%>, <Milestone (storage: 3.0) 0.0%>]
 
 Let's create a simulation:
 
@@ -296,8 +296,7 @@ StepSim is licensed under the GPL. See the file COPYING for details.
 Author
 ------
 
-Florian Berger
-"""
+Florian Berger"""
 
 distutils.core.setup(name = "stepsim",
                      version = stepsim.VERSION,

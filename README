@@ -131,7 +131,7 @@ will prevent hanging on impossible conditions:
     >>> s.estimate_finish("cashbox < 1", 100)
     100
 
-Whe you remove a converter, its last step will be reverted. Note that this does
+When you remove a converter, its last step will be reverted. Note that this does 
 not rewind the simulation step counter.
 
     >>> stepsim.log_to_stdout()
