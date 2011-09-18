@@ -298,6 +298,8 @@ Author
 
 Florian Berger"""
 
+# TODO: Don't install anything into /share/doc, it's too OS-dependent
+
 distutils.core.setup(name = "stepsim",
                      version = stepsim.VERSION,
                      author = "Florian Berger",

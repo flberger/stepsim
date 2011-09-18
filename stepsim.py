@@ -172,7 +172,7 @@ class Converter:
            A string holding the name of this Converter.
 
        Converter.steps
-           Interger holding the number of steps needed to manufacture the output.
+           Integer holding the number of steps needed to manufacture the output.
 
        Converter.last_step_successful
            Boolean flag denoting whether the last step (draw / deliver) worked out.
@@ -232,8 +232,9 @@ class Converter:
 
         return
 
-    def step(self):
-        """Draw units from source Containers and feed units to target Container.
+    def draw(self):
+        """Draw units from source Containers. To be called by Simulation.step().
+           Return True if Converter.countdown == -1, False otherwise.
         """
 
         if self.countdown == -1:
@@ -290,11 +291,12 @@ class Converter:
                         # Due to the test above, this should not happen
                         #
                         msg = "{0}: Could only draw {1} {2} instead of {3} {2} from {4}."
+
                         LOGGER.debug(msg.format(self.name,
-                                         units_drawn,
-                                         tuple[0].type,
-                                         tuple[1],
-                                         tuple[0].name))
+                                                units_drawn,
+                                                tuple[0].type,
+                                                tuple[1],
+                                                tuple[0].name))
 
                         self.last_step_successful = False
 
@@ -304,7 +306,46 @@ class Converter:
 
                     self.countdown = self.steps
 
-        elif self.countdown == 0:
+            LOGGER.debug("Active Container of {0}: {1}".format(self.name,
+                                                               self.active_container))
+
+            return True
+
+        else:
+
+            return False
+
+    def process(self):
+        """Process units by counting down Converter.countdown. To be called by Simulation.step().
+           Return True if Converter.countdown > 0, False otherwise.
+        """
+
+        if self.countdown > 0:
+
+            LOGGER.info("{0}: Conversion in progress, {1} steps left.".format(self.name,
+                                                                              self.countdown))
+
+            self.countdown = self.countdown - 1
+
+            # No active Container
+            #
+            self.active_container = None
+
+            LOGGER.debug("Active Container of {0}: {1}".format(self.name,
+                                                               self.active_container))
+
+            return True
+
+        else:
+
+            return False
+
+    def deliver(self):
+        """Feed units to target Container when processing is done. To be called by Simulation.step().
+           Return True if Converter.countdown == 0, False otherwise.
+        """
+
+        if self.countdown == 0:
 
             # Still going?
             # TODO: obsolete check? Remove?
@@ -330,21 +371,14 @@ class Converter:
 
                 self.countdown = -1
 
-        elif self.countdown > 0:
+            LOGGER.debug("Active Container of {0}: {1}".format(self.name,
+                                                               self.active_container))
 
-            LOGGER.info("{0}: Conversion in progress, {1} steps left.".format(self.name,
-                                                                              self.countdown))
+            return True
 
-            self.countdown = self.countdown - 1
+        else:
 
-            # No active Container
-            #
-            self.active_container = None
-
-        LOGGER.debug("Active Container of {0}: {1}".format(self.name,
-                                                           self.active_container))
-
-        return
+            return False
 
     def revert(self):
         """Undo the last draw action taken by this Converter.
@@ -379,7 +413,7 @@ class Converter:
                                                           self.target_units_tuple[0].name)
 
 class Milestone:
-    """A Milestone incorporates information to be returned by Simulation.milestones().
+    """A Milestone incorporates information to be returned by milestones().
 
        Attributes:
 
@@ -671,11 +705,34 @@ class Simulation:
         """Advance one simulation step.
         """
 
+        # To be able to evaluate the Container state between steps, we do not
+        # want Converters to pick up units that have just been delivered during
+        # the same step. So we first call Converter.process(), then
+        # Converter.draw(), then Converter.deliver(). Still, the three have to
+        # be mutually exclusive, i.e. only one of the three is carried out in
+        # one step.
+
+        converters_no_process = []
+
         # Use self.converter_list in all iterations to be deterministic
         #
         for name in self.converter_list:
 
-            self.converter_dict[name].step()
+            if not self.converter_dict[name].process():
+
+                converters_no_process.append(name)
+
+        converters_no_draw = []
+
+        for name in converters_no_process:
+
+            if not self.converter_dict[name].draw():
+
+                converters_no_draw.append(name)
+
+        for name in converters_no_draw:
+
+            self.converter_dict[name].deliver()
 
         self.step_counter = self.step_counter + 1
 
