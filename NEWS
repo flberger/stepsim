@@ -1,6 +1,16 @@
 NEWS for StepSim
 ================
 
+0.5.3
+-----
+
+Released on 18 September 2011.
+
+Removed step() from Converter and replaced it by draw(), process() and deliver() 
+which are called by Simulation.step(). The new methods return True if the 
+Converter's countdown permitted the action, False otherwise.
+
+
 0.5.2
 -----
 
