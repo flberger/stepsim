@@ -84,11 +84,11 @@ lead to an end condition (without actually running a simulation):
     Milestones to achieve storage == 3:
     <BLANKLINE>
     Milestone:
-    9 EUR in cashbox (10 in stock, 111.11%)
+    9 EUR in cashbox (10 delivered, 111.11%)
     total: 100.0%
     <BLANKLINE>
     Milestone:
-    3.0 parts in storage (0 in stock, 0.0%)
+    3.0 parts in storage (0 delivered, 0.0%)
     total: 0.0%
     ------------------------------
     [<Milestone (cashbox: 9) 100.0%>, <Milestone (storage: 3.0) 0.0%>]

@@ -109,17 +109,23 @@ class Container:
 
        Container.type
            A string value representing the type of storage.
+
+       Container.units_delivered
+           The total number of units that have been delivered to this Container,
+           including the default stock given in __init__().
+           Warning: Container.units_delivered will not be updated if you change
+           Container.stock directly.
     """
 
     def __init__(self, name, type, stock = 0):
         """Initalise.
-           type must be a string describing the type of units (kg, EUR, etc.).
+           type must be a string describing the type of units ("kg", "EUR", etc.).
            stock is the initial stock and must be an integer.
         """
 
         self.name = name
         self.type = type
-        self.stock = stock
+        self.stock = self.units_delivered = stock
 
         return
 
@@ -143,9 +149,13 @@ class Container:
 
     def deliver(self, units):
         """Deliver a number of units to this container.
+           Use this method instead of changing Containter.stock directly if you
+           want Container.units_delivered to be up to date.
         """
 
         self.stock = self.stock + units
+
+        self.units_delivered = self.units_delivered + units
 
         return
 
@@ -457,13 +467,16 @@ class Milestone:
 
     def percent(self, container):
         """Return the percentage of completeness of the container.
+           This uses Container.units_delivered for computation, so the
+           percentage relates to the lifetime of the Container, not to
+           the current stock.
         """
 
         if container in self.containers:
 
             # Explicit float conversion for Python 2.6
             #
-            return float(container.stock) / float(self.units(container)) * 100.0
+            return float(container.units_delivered) / float(self.units(container)) * 100.0
 
         else:
             raise KeyError("Container {0} not in Milestone.container_value_dict".format(container))
@@ -525,14 +538,14 @@ class Milestone:
 
         return_str = "\nMilestone:\n"
 
-        msg = "{0} {1} in {2} ({3} in stock, {4}%)\n"
+        msg = "{0} {1} in {2} ({3} delivered, {4}%)\n"
 
         for container in self.containers:
 
             return_str = return_str + msg.format(self.units(container),
                                                  container.type,
                                                  container.name,
-                                                 container.stock,
+                                                 container.units_delivered,
                                                  round(self.percent(container), 2))
 
         return_str = return_str + "total: {0}%".format(round(self.total_percent(), 2))
@@ -703,6 +716,7 @@ class Simulation:
 
     def step(self):
         """Advance one simulation step.
+           This will not return an error if the simulation is empty.
         """
 
         # To be able to evaluate the Container state between steps, we do not
