@@ -40,9 +40,9 @@ try:
 
 except AttributeError:
 
-    # Fallback for Python < 3.1
-    #
     class NullHandler(logging.Handler):
+        """Fallback Handler for Python < 3.1
+        """
 
         def emit(self, record):
             pass
@@ -197,6 +197,14 @@ class Converter:
            The last Container that this Converter has just drawn from or
            delivered to. None if no Container has been accessed in the current
            step.
+
+       Converter.max_units
+           Integer giving the maximum number of units that this Converter will
+           deliver. If max_units < 0, the Converter will deliver an unlimited
+           number of units. Initially -1.
+
+       Converter.units_delivered
+           Integer, giving the number of units delivered so far. Initially zero.
     """
 
     # TODO: implement adaptive flexible converters that draw as much as they can (or as much as they can get, given less resources) while keeping the ratio
@@ -229,6 +237,10 @@ class Converter:
 
         self.active_container = None
 
+        self.max_units = -1
+
+        self.units_delivered = 0
+
         return
 
     def draw_from(self, container, units):
@@ -247,6 +259,19 @@ class Converter:
            Return True if Converter.countdown == -1, False otherwise.
         """
 
+        if (self.max_units >= 0
+            and self.units_delivered >= self.max_units):
+
+            msg = "{0}: delivered {1} units, max units is {2}, no action."
+
+            LOGGER.info(msg.format(self.name,
+                                   self.units_delivered,
+                                   self.max_units))
+
+            self.last_step_successful = False
+
+            return False
+
         if self.countdown == -1:
 
             LOGGER.debug("{0}: Ready to draw resources".format(self.name))
@@ -261,11 +286,13 @@ class Converter:
 
                 if tuple[0].stock < tuple[1]:
 
-                    LOGGER.debug("{0}: Cannot draw {1} {2} from {3}, only {4} left.".format(self.name,
-                                                                                     tuple[1],
-                                                                                     tuple[0].type,
-                                                                                     tuple[0].name,
-                                                                                     tuple[0].stock))
+                    msg = "{0}: Cannot draw {1} {2} from {3}, only {4} left."
+
+                    LOGGER.debug(msg.format(self.name,
+                                            tuple[1],
+                                            tuple[0].type,
+                                            tuple[0].name,
+                                            tuple[0].stock))
 
                     self.last_step_successful = False
 
@@ -330,6 +357,9 @@ class Converter:
            Return True if Converter.countdown > 0, False otherwise.
         """
 
+        # Not checking max_units here since this method does not affect
+        # containers.
+
         if self.countdown > 0:
 
             LOGGER.info("{0}: Conversion in progress, {1} steps left.".format(self.name,
@@ -354,6 +384,9 @@ class Converter:
         """Feed units to target Container when processing is done. To be called by Simulation.step().
            Return True if Converter.countdown == 0, False otherwise.
         """
+
+        # Not checking max_units here since the check in draw() will effectively
+        # disable delivery.
 
         if self.countdown == 0:
 
@@ -380,6 +413,11 @@ class Converter:
                                                                 self.target_units_tuple[0].type))
 
                 self.countdown = -1
+
+                self.units_delivered += self.target_units_tuple[1]
+
+                LOGGER.debug("{0} has delivered {1} units since added.".format(self.target_units_tuple[0].name,
+                                                                               self.units_delivered))
 
             LOGGER.debug("Active Container of {0}: {1}".format(self.name,
                                                                self.active_container))
@@ -411,6 +449,23 @@ class Converter:
                 units_drawn = tuple[0].deliver(tuple[1])
 
         self.countdown = -1
+
+        return
+
+    def set_max_units(self, units):
+        """Set the maximum number of units that this Converter will deliver.
+           This will reset Converter.units_delivered.
+        """
+
+        self.max_units = units
+
+        self.units_delivered = 0
+
+        # Let's give it a fresh start
+        #
+        self.last_step_successful = True
+
+        LOGGER.debug("{0}: setting max_units to {1}".format(self.name, units))
 
         return
 
@@ -558,16 +613,17 @@ class Simulation:
        Attributes:
 
        Simulation.converter_dict
-           A dict of Converters whose step() function will be called in
-           Simulation.step(), indexed by their names.
+           A dict mapping Converter names to instances of Converters whose
+           draw(), process() and deliver() methods will be called in
+           Simulation.step().
 
        Simulation.converter_list
            A list of Converters names, in order of their addition to the
            Simulation.
 
        Simulation.container_dict
-           A convenience dict of Containers connected to the Converters, indexed
-           by their names.
+           A convenience dict mapping Container names to instances of Containers
+           connected to the Converters.
 
        Simulation.step_counter
            An integer counting the steps that have been taken.
@@ -679,8 +735,10 @@ class Simulation:
 
             if container not in self.container_dict.keys():
 
-                raise KeyError("container '{0}' not in Simulation.container_dict: {1}".format(container,
-                                                                                              list(self.container_dict.keys())))
+                msg = "container '{0}' not in Simulation.container_dict: {1}"
+
+                raise KeyError(msg.format(container,
+                                          list(self.container_dict.keys())))
 
             # The regex above will let an invalid "<<" etc. pass, so check again
             #
