@@ -1,6 +1,20 @@
 NEWS for StepSim
 ================
 
+0.5.4
+-----
+
+Released on 24 February 2012.
+
+Added Container.units_delivered which counts the total number of units delivered 
+to a Container. Changed Milestone.percent() to use Container.units_delivered 
+instead of Container.stock. Added Converter.max_units and 
+Converter.units_delivered. Converter.draw() will now check if 
+Converter.units_delivered has reached Converter.max_units before drawing 
+resources. Added Converter.set_max_units() Changed doctests in README 
+accordingly. Minor changes and additions.
+
+
 0.5.3
 -----
 

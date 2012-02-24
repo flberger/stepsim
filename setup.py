@@ -121,11 +121,11 @@ that lead to an end condition (without actually running a simulation):
     Milestones to achieve storage == 3:
     <BLANKLINE>
     Milestone:
-    9 EUR in cashbox (10 in stock, 111.11%)
+    9 EUR in cashbox (10 delivered, 111.11%)
     total: 100.0%
     <BLANKLINE>
     Milestone:
-    3.0 parts in storage (0 in stock, 0.0%)
+    3.0 parts in storage (0 delivered, 0.0%)
     total: 0.0%
     ------------------------------
     [<Milestone (cashbox: 9) 100.0%>, <Milestone (storage: 3.0) 0.0%>]
@@ -179,7 +179,7 @@ step value will prevent hanging on impossible conditions:
     >>> s.estimate_finish("cashbox < 1", 100)
     100
 
-Whe you remove a converter, its last step will be reverted. Note that
+When you remove a converter, its last step will be reverted. Note that
 this does not rewind the simulation step counter.
 
 ::
@@ -195,68 +195,97 @@ this does not rewind the simulation step counter.
     Removing converter 'buyer' from simulation.
     Current containers: []
 
-You can now step on through the simulation or simply let it run from the
-current state until an end condition is satisfied. In this case we let
-it run until the buyer can not buy any more parts:
+It is possible to limit the number of units that a converter will
+deliver.
+
+::
+
+    >>> buyer.set_max_units(1)
+    buyer: setting max_units to 1
+
+By stepping through the simulation, we can check when the converter
+stops.
 
 ::
 
     >>> s.add_converter(buyer)
     Adding converter 'buyer' to simulation.
     Current containers: ['cashbox', 'storage']
-    >>> s.run(lambda : not buyer.last_step_successful)
-    Starting simulation.
-    --- Step 3: -----------------------------------------------
+    >>> s.step()
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox.
     cashbox has 7 EUR left now.
     Active Container of buyer: <cashbox: 7 EUR in stock>
-    --- Step 4: -----------------------------------------------
+    >>> s.step()
     buyer: Conversion in progress, 2 steps left.
     Active Container of buyer: None
-    --- Step 5: -----------------------------------------------
+    >>> s.step()
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
-    --- Step 6: -----------------------------------------------
+    >>> s.step()
     buyer: Delivering 1 parts to storage.
     storage stock is 1 parts now.
+    storage has delivered 1 units since added.
     Active Container of buyer: <storage: 1 parts in stock>
-    --- Step 7: -----------------------------------------------
+    >>> s.step()
+    buyer: delivered 1 units, max units is 1, no action.
+    >>> s.step()
+    buyer: delivered 1 units, max units is 1, no action.
+
+With the maximum number of units set to -1, the converter will deliver
+an unlimited number. This is the default.
+
+::
+
+    >>> buyer.set_max_units(-1)
+    buyer: setting max_units to -1
+
+We can run the simulation from the current state until an end condition
+is satisfied. In this case we let it run until the buyer can not buy any
+more parts:
+
+::
+
+    >>> s.run(lambda: not buyer.last_step_successful)
+    Starting simulation.
+    --- Step 9: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox.
     cashbox has 4 EUR left now.
     Active Container of buyer: <cashbox: 4 EUR in stock>
-    --- Step 8: -----------------------------------------------
+    --- Step 10: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
     Active Container of buyer: None
-    --- Step 9: -----------------------------------------------
+    --- Step 11: -----------------------------------------------
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
-    --- Step 10: -----------------------------------------------
+    --- Step 12: -----------------------------------------------
     buyer: Delivering 1 parts to storage.
     storage stock is 2 parts now.
+    storage has delivered 1 units since added.
     Active Container of buyer: <storage: 2 parts in stock>
-    --- Step 11: -----------------------------------------------
+    --- Step 13: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox.
     cashbox has 1 EUR left now.
     Active Container of buyer: <cashbox: 1 EUR in stock>
-    --- Step 12: -----------------------------------------------
+    --- Step 14: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
     Active Container of buyer: None
-    --- Step 13: -----------------------------------------------
+    --- Step 15: -----------------------------------------------
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
-    --- Step 14: -----------------------------------------------
+    --- Step 16: -----------------------------------------------
     buyer: Delivering 1 parts to storage.
     storage stock is 3 parts now.
+    storage has delivered 2 units since added.
     Active Container of buyer: <storage: 3 parts in stock>
-    --- Step 15: -----------------------------------------------
+    --- Step 17: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Cannot draw 3 EUR from cashbox, only 1 left.
     Active Container of buyer: None
     --- Break condition met, simulation finished. ---------------
-    Final state after 15 steps:
+    Final state after 17 steps:
     <cashbox: 1 EUR in stock>
     <storage: 3 parts in stock>
 

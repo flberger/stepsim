@@ -11,7 +11,7 @@ help:
 	@echo '    making_cakes.png'
 	@echo '    pypi'
 	@echo '    README.rst'
-	@echo '    freshmeat'
+	@echo '    freecode'
 	@echo '    sign'
 
 doctest:
@@ -48,10 +48,10 @@ pypi:
 README.rst: README
 	pandoc --output README.rst README
 
-freshmeat:
-	@echo RETURN to submit to freshmeat.net using freshmeat-submit.txt, CTRL-C to cancel:
+freecode:
+	@echo RETURN to submit to freecode.com using freecode-submit.txt, CTRL-C to cancel:
 	@read DUMMY
-	freshmeat-submit < freshmeat-submit.txt
+	freecode-submit < freecode-submit.txt
 
 sign:
 	rm -vf dist/*.asc
