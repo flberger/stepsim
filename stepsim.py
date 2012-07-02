@@ -20,8 +20,7 @@
 
 # Work started on 05 Feb 2011.
 
-# NOTE: in string formatting operations, I use "{1}" instead of "{}" to be
-# compatible with Python < 3.1
+# NOTE: in string formatting operations, I use "{1}" instead of "{}" to be compatible with Python < 3.1
 
 import time
 import logging
@@ -29,7 +28,7 @@ import re
 import copy
 from sys import stdout
 
-VERSION = "0.5.4"
+VERSION = "0.5.5a"
 
 LOGGER = logging.getLogger("stepsim")
 
@@ -487,6 +486,9 @@ class Milestone:
 
        Milestone.containers
            A list of containers in order of their addition.
+
+       Milestone.converters
+           A list of converters that contribute to this milestone.
     """
 
     def __init__(self):
@@ -495,6 +497,7 @@ class Milestone:
 
         self.container_value_dict = {}
         self.containers = []
+        self.converters = []
 
         return
 
@@ -962,7 +965,7 @@ def milestones(condition_string, converter_list, graph_export = None):
        converter_list must be a list of Converters that should be searched for
        contributions to Milestones.
 
-       If graph_export is given, it must be file name to call
+       If graph_export is given, it must be a file name to call
        Simulation.save_dot() with.
 
        If no Milestones can be computed for this condition, an empty list is
@@ -1037,9 +1040,7 @@ def milestones(condition_string, converter_list, graph_export = None):
 
             LOGGER.debug("looking for contributors to '{0}'".format(milestone_container.name))
 
-            contributors = []
-
-            # Use self.converter_list in all iterations to be deterministic
+            # Using self.converter_list in all iterations to be deterministic
             #
             for name in simulation.converter_list:
 
@@ -1049,11 +1050,11 @@ def milestones(condition_string, converter_list, graph_export = None):
 
                     LOGGER.debug("found contributor '{0}'".format(converter.name))
 
-                    contributors.append(converter)
+                    current_milestone.converters.append(converter)
 
             # Any contributors?
             #
-            if not contributors:
+            if not current_milestone.converters:
 
                 LOGGER.debug("no contributors, aborting")
 
@@ -1072,7 +1073,7 @@ def milestones(condition_string, converter_list, graph_export = None):
                 LOGGER.debug(msg.format(units_produced,
                                         current_milestone.units(milestone_container)))
 
-                for converter in contributors:
+                for converter in current_milestone.converters:
 
                     LOGGER.debug("converter '{0}'".format(converter.name))
 
@@ -1107,7 +1108,7 @@ def milestones(condition_string, converter_list, graph_export = None):
 
         LOGGER.debug("setting current milestone to new milestone {0}".format(repr(current_milestone)))
 
-    # current_milestone is False, all possible milestones collected
+    # current_milestone evaluates to False, all possible milestones collected
 
     LOGGER.info("------------------------------")
     LOGGER.info("Milestones to achieve {0}:".format(condition_string))
