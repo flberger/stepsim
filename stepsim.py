@@ -240,6 +240,14 @@ class Converter:
 
         self.units_delivered = 0
 
+        # Cache for old steps value. See Converter.set_temporary_steps()
+        #
+        self._steps_cached = None
+
+        # Countdown for temporary steps. See Converter.set_temporary_steps()
+        #
+        self._temp_countdown = -1
+
         return
 
     def draw_from(self, container, units):
@@ -340,6 +348,8 @@ class Converter:
                 #
                 if self.last_step_successful:
 
+                    # Python: this creates a copy
+                    #
                     self.countdown = self.steps
 
             LOGGER.debug("Active Container of {0}: {1}".format(self.name,
@@ -349,6 +359,8 @@ class Converter:
 
         else:
 
+            # self.countdown != -1
+            #
             return False
 
     def process(self):
@@ -365,6 +377,21 @@ class Converter:
                                                                               self.countdown))
 
             self.countdown = self.countdown - 1
+
+            if self._temp_countdown > 0:
+
+                self._temp_countdown -= 1
+
+            elif self._temp_countdown == 0:
+
+                LOGGER.info("restoring {0}.steps to {1}".format(self.name,
+                                                                self._steps_cached))
+
+                self.steps = self._steps_cached
+
+                self._steps_cached = None
+
+                self._temp_countdown = -1
 
             # No active Container
             #
@@ -413,10 +440,28 @@ class Converter:
 
                 self.countdown = -1
 
+                # Check for finished temporary step change
+                #
+                if self._temp_countdown > 0:
+
+                    self._temp_countdown -= 1
+
+                if self._temp_countdown == 0:
+
+                    LOGGER.info("restoring {0}.steps to {1}".format(self.name,
+                                                                    self._steps_cached))
+
+                    self.steps = self._steps_cached
+
+                    self._steps_cached = None
+
+                    self._temp_countdown = -1
+
                 self.units_delivered += self.target_units_tuple[1]
 
-                LOGGER.debug("{0} has delivered {1} units since added.".format(self.target_units_tuple[0].name,
-                                                                               self.units_delivered))
+                msg = "{0} has delivered {1} units since last reset."
+
+                LOGGER.debug(msg.format(self.name, self.units_delivered))
 
             LOGGER.debug("Active Container of {0}: {1}".format(self.name,
                                                                self.active_container))
@@ -467,6 +512,29 @@ class Converter:
         LOGGER.debug("{0}: setting max_units to {1}".format(self.name, units))
 
         return
+
+    def set_temporary_steps(self, value, duration):
+        """Set Converter.steps to value for duration steps.
+        """
+
+        # The actual work will be done in Converter.process()
+
+        LOGGER.info("setting {0}.steps = {1} for {2} steps".format(self.name,
+                                                                   value,
+                                                                   duration))
+
+        # Python: this creates a copy
+        #
+        self._steps_cached = self.steps
+
+        self.steps = value
+
+        # Countdown for temporary steps. See Converter.set_temporary_steps()
+        #
+        self._temp_countdown = duration
+
+        return
+
 
     def __repr__(self):
         """Readable string representation.
@@ -786,6 +854,8 @@ class Simulation:
         # Converter.draw(), then Converter.deliver(). Still, the three have to
         # be mutually exclusive, i.e. only one of the three is carried out in
         # one step.
+        #
+        # TODO: can this be done more elegantly using Python's generators?
 
         converters_no_process = []
 
