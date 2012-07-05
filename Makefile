@@ -13,6 +13,7 @@ help:
 	@echo '    README.rst'
 	@echo '    freecode'
 	@echo '    sign'
+	@echo '    lp'
 
 doctest:
 	$(PYTHON) -m doctest README
@@ -61,3 +62,7 @@ sign:
 	rm -vf dist/*.asc
 	for i in dist/*.zip ; do gpg --sign --armor --detach $$i ; done
 	gpg --verify --multifile dist/*.asc
+
+lp:
+	bzr launchpad-login fberger-fbmd
+	bzr push lp:~fberger-fbmd/stepsim/trunk
