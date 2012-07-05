@@ -1,6 +1,17 @@
 NEWS for StepSim
 ================
 
+0.5.5
+-----
+
+Released on 05 July 2012.
+
+Added Milestone.converters. Using current_milestone.converters now in 
+milestones(). Added Converter.set_temporary_steps(). Converter.process() and 
+Converter.deliver() now temporary change of Converter.steps. Added doctest for 
+temporary changing the step value of a Converter to README. Minor changes.
+
+
 0.5.4
 -----
 
