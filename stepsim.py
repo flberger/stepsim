@@ -48,7 +48,13 @@ except AttributeError:
 
     LOGGER.addHandler(NullHandler())
 
+STDERR_FORMATTER = logging.Formatter("stepsim [%(levelname)s] %(funcName)s(): %(message)s (l.%(lineno)d)")
+
 STDERR_HANDLER = logging.StreamHandler()
+STDERR_HANDLER.setFormatter(STDERR_FORMATTER)
+
+# No special formatter for STDOUT, less noise
+#
 STDOUT_HANLDER = logging.StreamHandler(stdout)
 
 def log_to_stderr():
@@ -352,6 +358,8 @@ class Converter:
                     #
                     self.countdown = self.steps
 
+                    LOGGER.debug("{0}: Setting processing countdown to {1} steps".format(self.name, self.countdown))
+
             LOGGER.debug("Active Container of {0}: {1}".format(self.name,
                                                                self.active_container))
 
@@ -515,26 +523,52 @@ class Converter:
 
     def set_temporary_steps(self, value, duration):
         """Set Converter.steps to value for duration steps.
+
+           Will return True if the steps could be set successfully, False when
+           a temporary value is already active.
         """
 
         # The actual work will be done in Converter.process()
 
-        LOGGER.info("setting {0}.steps = {1} for {2} steps".format(self.name,
-                                                                   value,
-                                                                   duration))
+        if self._steps_cached is not None:
 
-        # Python: this creates a copy
-        #
-        self._steps_cached = self.steps
+            msg = "{0}: {1} steps of temporary value {2} pending, not setting steps"
 
-        self.steps = value
+            LOGGER.warning(msg.format(self.name,
+                                      self._temp_countdown,
+                                      self.steps))
 
-        # Countdown for temporary steps. See Converter.set_temporary_steps()
-        #
-        self._temp_countdown = duration
+            return False
 
-        return
+        else:
 
+            LOGGER.info("{0}: setting steps = {1} for {2} steps".format(self.name,
+                                                                        value,
+                                                                        duration))
+
+            # Python: this creates a copy
+            #
+            self._steps_cached = self.steps
+
+            self.steps = value
+
+            # Countdown for temporary steps. See Converter.set_temporary_steps()
+            #
+            self._temp_countdown = duration
+
+            # As step countdowns may take a while, make it effect the current
+            # countdown at once.
+            #
+            self.countdown += self.steps - self._steps_cached
+
+            if self.countdown < -1:
+
+                self.countdown = -1
+
+            LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
+                                                                         self.countdown))
+
+        return True
 
     def __repr__(self):
         """Readable string representation.
