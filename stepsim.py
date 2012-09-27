@@ -399,6 +399,15 @@ class Converter:
 
                 self._steps_cached = None
 
+                # We do not log how much time has passed, so we restore to the
+                # full old step value.
+                # TODO: This actually prolongs the conversion. Replace with logging of steps.
+                #
+                self.countdown = self.steps
+
+                LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
+                                                                             self.countdown))
+
                 self._temp_countdown = -1
 
             # No active Container
@@ -552,14 +561,14 @@ class Converter:
 
             self.steps = value
 
-            # Countdown for temporary steps. See Converter.set_temporary_steps()
+            # Countdown for temporary steps.
             #
             self._temp_countdown = duration
 
             # As step countdowns may take a while, make it effect the current
             # countdown at once.
             #
-            self.countdown += self.steps - self._steps_cached
+            self.countdown = self.steps - (self._steps_cached - self.countdown)
 
             if self.countdown < -1:
 
