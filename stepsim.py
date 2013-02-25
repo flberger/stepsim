@@ -20,6 +20,8 @@
 
 # Work started on 05 Feb 2011.
 
+# TODO: name simulations, and when logging, put the name of the simulations in front of the message
+
 # NOTE: in string formatting operations, I use "{1}" instead of "{}" to be compatible with Python < 3.1
 
 import time
@@ -195,7 +197,7 @@ class Converter:
        Converter.countdown
            A counter to implement a three-state state machine:
            -1 : ready to draw resources
-           >0 : resources drawn, conversion in progress
+           > 0 : resources drawn, conversion in progress
             0 : conversion ready, delivering
 
        Converter.active_container
@@ -549,33 +551,33 @@ class Converter:
 
             return False
 
-        else:
+        LOGGER.info("{0}: setting steps = {1} for {2} steps".format(self.name,
+                                                                    value,
+                                                                    duration))
 
-            LOGGER.info("{0}: setting steps = {1} for {2} steps".format(self.name,
-                                                                        value,
-                                                                        duration))
+        # Python: this creates a copy
+        #
+        self._steps_cached = self.steps
 
-            # Python: this creates a copy
-            #
-            self._steps_cached = self.steps
+        self.steps = value
 
-            self.steps = value
+        # Countdown for temporary steps.
+        #
+        self._temp_countdown = duration
 
-            # Countdown for temporary steps.
-            #
-            self._temp_countdown = duration
+        # As step countdowns may take a while, make it effect the current
+        # countdown at once.
+        #
+        if self.countdown > -1:
 
-            # As step countdowns may take a while, make it effect the current
-            # countdown at once.
-            #
             self.countdown = self.steps - (self._steps_cached - self.countdown)
 
             if self.countdown < -1:
 
                 self.countdown = -1
 
-            LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
-                                                                         self.countdown))
+        LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
+                                                                     self.countdown))
 
         return True
 
@@ -1057,15 +1059,13 @@ class Simulation:
     def __repr__(self):
         """Readable string representation.
         """
-        repr_list = []
+
+        repr = "<Simulation, converters: {0}, containers: {1}>"
 
         # Use self.converter_list in all iterations to be deterministic
         #
-        for name in self.converter_list:
-
-            repr_list.append(self.converter_dict[name])
-
-        return "<Simulation consisting of {0}>".format(repr_list)
+        return repr.format([self.converter_dict[name] for name in self.converter_list],
+                           list(self.container_dict.values()))
 
 def milestones(condition_string, converter_list, graph_export = None):
     """Return an ordered list of Milestone instances that represents milestones to meet the condition.
