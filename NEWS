@@ -1,6 +1,20 @@
 NEWS for StepSim
 ================
 
+0.5.6
+-----
+
+Released on 25 Feb 2013.
+
+Added STDERR_FORMATTER for STDERR_HANDLER for more distinguishable output to 
+STDERR. More verbose logging. Converter.set_temporary_steps() now applies the 
+change at once, changing Converter.countdown. Converter.set_temporary_steps() 
+now will not change any values if a temporary change is already active, and 
+return False instead. Converter.process() it now restores Converter.countdown 
+when the temporary countdown has passed. Simulation.__repr__() now also includes 
+all containers and their state. Updated doctest example in README.
+
+
 0.5.5
 -----
 

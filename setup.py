@@ -111,7 +111,8 @@ Then create a converter and set up the draw-deliver-ratio:
     buyer: Adding source 'cashbox', drawing 3 EUR per step.
 
 From any list of converters, we can get a list of simulation milestones
-that lead to an end condition (without actually running a simulation):
+that lead to an end condition (without actually starting the
+simulation):
 
 ::
 
@@ -139,7 +140,7 @@ Let's create a simulation:
     Adding converter 'buyer' to simulation.
     Current containers: ['cashbox', 'storage']
     >>> s
-    <Simulation consisting of [<buyer: converting from ['cashbox'] to storage>]>
+    <Simulation, converters: [<buyer: converting from ['cashbox'] to storage>], containers: [<cashbox: 10 EUR in stock>, <storage: 0 parts in stock>]>
 
 The step() method is used to advance the simulation by one step:
 
@@ -217,6 +218,7 @@ stops.
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox.
     cashbox has 7 EUR left now.
+    buyer: Setting processing countdown to 2 steps
     Active Container of buyer: <cashbox: 7 EUR in stock>
     >>> s.step()
     buyer: Conversion in progress, 2 steps left.
@@ -243,17 +245,20 @@ an unlimited number. This is the default.
     buyer: setting max_units to -1
 
 It is possible to temporarily change the speed of the converter by
-giving the temporary steps value and a duration:
+giving the temporary steps value and a duration. This method will return
+True if the change was successful:
 
 ::
 
     >>> buyer.set_temporary_steps(4, 4)
-    setting buyer.steps = 4 for 4 steps
-
+    buyer: setting steps = 4 for 4 steps
+    buyer: setting remaining countdown to -1
+    True
     >>> s.step()
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox.
     cashbox has 4 EUR left now.
+    buyer: Setting processing countdown to 4 steps
     Active Container of buyer: <cashbox: 4 EUR in stock>
     >>> s.step()
     buyer: Conversion in progress, 4 steps left.
@@ -286,6 +291,7 @@ more parts:
     buyer: Ready to draw resources
     buyer: Drawing 3 EUR from cashbox.
     cashbox has 1 EUR left now.
+    buyer: Setting processing countdown to 2 steps
     Active Container of buyer: <cashbox: 1 EUR in stock>
     --- Step 16: -----------------------------------------------
     buyer: Conversion in progress, 2 steps left.
@@ -343,7 +349,13 @@ StepSim is licensed under the GPL. See the file COPYING for details.
 Links
 -----
 
+StepSim on Launchpad: https://launchpad.net/stepsim
+
+StepSim on ohloh: https://www.ohloh.net/p/stepsim
+
 StepSim on Freecode: http://freecode.com/projects/stepsim
+
+StepSim in the Python Package Index: http://pypi.python.org/pypi/stepsim
 
 Author
 ------
