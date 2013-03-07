@@ -21,6 +21,8 @@
 # Work started on 05 Feb 2011.
 
 # TODO: name simulations, and when logging, put the name of the simulations in front of the message
+# TODO: GUI with Cairo-graph (http://cairographics.org/pycairo/) and Tkinter dialogs
+# TODO: kompakterer Graph-Export: Converter mit gleicher Funktion zu einem Knoten zusammenfassen
 
 # NOTE: in string formatting operations, I use "{1}" instead of "{}" to be compatible with Python < 3.1
 
@@ -30,7 +32,7 @@ import re
 import copy
 from sys import stdout
 
-VERSION = "0.5.6"
+VERSION = "0.5.7a"
 
 LOGGER = logging.getLogger("stepsim")
 
@@ -1151,6 +1153,10 @@ def milestones(condition_string, converter_list, graph_export = None):
 
         for milestone_container in current_milestone.containers:
 
+            LOGGER.debug("resetting converters in '{0}'".format(repr(current_milestone)))
+
+            current_milestone.converters = []
+
             LOGGER.debug("looking for contributors to '{0}'".format(milestone_container.name))
 
             # Using self.converter_list in all iterations to be deterministic
@@ -1174,8 +1180,12 @@ def milestones(condition_string, converter_list, graph_export = None):
                 break
 
             # Now we know who contributes to achieving this part of the
-            # milestone. We use them round robin until the demanded value
-            # is fulfilled.
+            # milestone.
+            #
+            LOGGER.debug("contributors to '{0}': {1}".format(repr(current_milestone),
+                                                             [converter.name for converter in current_milestone.converters]))
+
+            # We use them round robin until the demanded value is fulfilled.
             #
             units_produced = 0
 
@@ -1195,6 +1205,10 @@ def milestones(condition_string, converter_list, graph_export = None):
                     for source_unit_tuple in converter.source_tuples_list:
 
                         new_milestone.add(source_unit_tuple[0], source_unit_tuple[1])
+
+                        LOGGER.debug("'{0}' needs {1} more of '{2}'".format(converter.name,
+                                                                            source_unit_tuple[1],
+                                                                            source_unit_tuple[0].name))
 
                         LOGGER.debug("new milestone is currently {0}".format(repr(new_milestone)))
 

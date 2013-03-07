@@ -76,7 +76,7 @@ Then create a converter and set up the draw-deliver-ratio:
     buyer: Adding source 'cashbox', drawing 3 EUR per step.
 
 From any list of converters, we can get a list of simulation milestones that
-lead to an end condition (without actually starting the simulation):
+lead to an end condition (without explicitly creating a simulation):
 
     >>> stepsim.loglevel("info")
     >>> stepsim.milestones("storage == 3", [buyer])
