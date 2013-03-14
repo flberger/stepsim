@@ -1048,11 +1048,41 @@ class Simulation:
     node [fontsize={1}, fontname="{2}"] ;
 """.format(size, fontsize, fontname)]
 
+        # For brevity, we only want a single node in the graph for all
+        # Converters that compare equal.
+        # So we build a list of lists of equal Converters.
+        #
+        converter_lists = []
+
         # Use self.converter_list in all iterations to be deterministic
         #
         for name in self.converter_list:
 
             converter = self.converter_dict[name]
+
+            for sublist in converter_lists:
+
+                # Equivalent converters compare as equal, check for the
+                # first only
+                #
+                if converter == sublist[0]:
+
+                    sublist.append(converter)
+
+                    converter = None
+
+                    break
+
+            if converter is not None:
+
+                converter_lists.append([converter])
+
+        # Now export the graph
+        #
+        for sublist in converter_lists:
+
+            converter = sublist[0]
+            converters_name = "\\n".join([converter.name for converter in sublist])
 
             # First the source containers
             #
@@ -1065,7 +1095,7 @@ class Simulation:
                     dot_string_list.append(shape_string)
 
                 dot_string_list.append('    "{0}" -> "{1}" ;\n'.format(tuple[0].name,
-                                                                       converter.name))
+                                                                       converters_name))
 
             # Then the target container
             #
@@ -1075,7 +1105,7 @@ class Simulation:
 
                 dot_string_list.append(shape_string)
 
-            dot_string_list.append('    "{0}" -> "{1}" ;\n'.format(converter.name,
+            dot_string_list.append('    "{0}" -> "{1}" ;\n'.format(converters_name,
                                                                    converter.target_units_tuple[0].name))
 
         dot_string_list.append("}\n")
