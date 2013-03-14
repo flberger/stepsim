@@ -591,6 +591,37 @@ class Converter:
                                                           str(list(map(lambda x: x[0].name, self.source_tuples_list))),
                                                           self.target_units_tuple[0].name)
 
+    def __eq__(self, other):
+        """Converters compare equal if the draw from the same Containers and deliver to the same Container.
+        """
+
+        if not isinstance(other, Converter):
+
+            return NotImplemented
+
+        self_containers = [tup[0] for tup in self.source_tuples_list]
+        other_containers = [tup[0] for tup in other.source_tuples_list]
+
+        # Containers are not hashable, so use their name
+        #
+        if set([container.name for container in self_containers]) != set([container.name for container in other_containers]):
+
+            return False
+
+        if self.target_units_tuple[0].name != other.target_units_tuple[0].name:
+
+            return False
+
+        return True
+
+    def __ne__(self, other):
+
+        if not isinstance(other, Converter):
+
+            return NotImplemented
+
+        return not self.__eq__(other)
+
 class Milestone:
     """A Milestone incorporates information to be returned by milestones().
 
@@ -842,7 +873,7 @@ class Simulation:
            Returns a three-string tuple (container, operator, value).
         """
 
-        # Taken from my Projektmanager game on 7 April 2011
+        # Taken from my "Projektmanager" game on 7 April 2011
 
         match = re.match(r"^([^<>=!]+?)\s*([<>=!]{1,2})\s*(\w+)\s*$",
                          condition_string)
@@ -965,7 +996,7 @@ class Simulation:
            alter the original instance in any way.
         """
 
-        # Taken from my Projektmanager game on 7 April 2011
+        # Taken from my "Projektmanager" game on 7 April 2011
 
         # First check if the condition has already been met.
         #
