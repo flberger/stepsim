@@ -1238,7 +1238,9 @@ def milestones(condition_string, converter_list, graph_export = None):
 
                 LOGGER.debug("no contributors, aborting")
 
-                break
+                # Do not break. There might be items left.
+                #
+                continue
 
             # Now we know who contributes to achieving this part of the
             # milestone.
