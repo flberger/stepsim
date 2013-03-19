@@ -81,6 +81,8 @@ def loglevel(level):
     """Convenienve function. Level must be one of ("critical", "error", "warning", "info", "debug").
     """
 
+    # TODO: accept logging.CRITICAL etc. arguments
+
     level_dict = {"critical": logging.CRITICAL,
                   "error": logging.ERROR,
                   "warning": logging.WARNING,
@@ -635,6 +637,8 @@ class Milestone:
 
        Milestone.converters
            A list of converters that contribute to this milestone.
+           This must be populated from outside the Milestone.
+           milestones() will do this.
     """
 
     def __init__(self):
@@ -1216,7 +1220,10 @@ def milestones(condition_string, converter_list, graph_export = None):
 
             LOGGER.debug("resetting converters in '{0}'".format(repr(current_milestone)))
 
-            current_milestone.converters = []
+            # Use a temporary local variable instead of
+            # current_milestone.converters as it may store leftover converters
+            #
+            current_converters = []
 
             LOGGER.debug("looking for contributors to '{0}'".format(milestone_container.name))
 
@@ -1230,11 +1237,11 @@ def milestones(condition_string, converter_list, graph_export = None):
 
                     LOGGER.debug("found contributor '{0}'".format(converter.name))
 
-                    current_milestone.converters.append(converter)
+                    current_converters.append(converter)
 
             # Any contributors?
             #
-            if not current_milestone.converters:
+            if not current_converters:
 
                 LOGGER.debug("no contributors, aborting")
 
@@ -1246,7 +1253,11 @@ def milestones(condition_string, converter_list, graph_export = None):
             # milestone.
             #
             LOGGER.debug("contributors to '{0}': {1}".format(repr(current_milestone),
-                                                             [converter.name for converter in current_milestone.converters]))
+                                                             [converter.name for converter in current_converters]))
+
+            # Accumulate used Converters in Milestone for bookkeeping.
+            #
+            current_milestone.converters.extend(current_converters)
 
             # We use them round robin until the demanded value is fulfilled.
             #
@@ -1259,7 +1270,7 @@ def milestones(condition_string, converter_list, graph_export = None):
                 LOGGER.debug(msg.format(units_produced,
                                         current_milestone.units(milestone_container)))
 
-                for converter in current_milestone.converters:
+                for converter in current_converters:
 
                     LOGGER.debug("converter '{0}'".format(converter.name))
 
