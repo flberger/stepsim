@@ -216,6 +216,10 @@ class Converter:
 
        Converter.units_delivered
            Integer, giving the number of units delivered so far. Initially zero.
+
+       Converter.steps_cached
+           Will cache the previous steps value when a temporary steps value
+           is active. None if no temporary steps are active.
     """
 
     # TODO: implement adaptive flexible converters that draw as much as they can (or as much as they can get, given less resources) while keeping the ratio
@@ -254,7 +258,7 @@ class Converter:
 
         # Cache for old steps value. See Converter.set_temporary_steps()
         #
-        self._steps_cached = None
+        self.steps_cached = None
 
         # Countdown for temporary steps. See Converter.set_temporary_steps()
         #
@@ -398,23 +402,7 @@ class Converter:
 
             elif self._temp_countdown == 0:
 
-                LOGGER.info("restoring {0}.steps to {1}".format(self.name,
-                                                                self._steps_cached))
-
-                self.steps = self._steps_cached
-
-                self._steps_cached = None
-
-                # We do not log how much time has passed, so we restore to the
-                # full old step value.
-                # TODO: This actually prolongs the conversion. Replace with logging of steps.
-                #
-                self.countdown = self.steps
-
-                LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
-                                                                             self.countdown))
-
-                self._temp_countdown = -1
+                self.end_temporary_steps()
 
             # No active Container
             #
@@ -472,11 +460,11 @@ class Converter:
                 if self._temp_countdown == 0:
 
                     LOGGER.info("restoring {0}.steps to {1}".format(self.name,
-                                                                    self._steps_cached))
+                                                                    self.steps_cached))
 
-                    self.steps = self._steps_cached
+                    self.steps = self.steps_cached
 
-                    self._steps_cached = None
+                    self.steps_cached = None
 
                     self._temp_countdown = -1
 
@@ -537,7 +525,7 @@ class Converter:
         return
 
     def set_temporary_steps(self, value, duration):
-        """Set Converter.steps to value for duration steps.
+        """Set Converter.steps to `value` for `duration` steps.
 
            Will return True if the steps could be set successfully, False when
            a temporary value is already active.
@@ -545,7 +533,7 @@ class Converter:
 
         # The actual work will be done in Converter.process()
 
-        if self._steps_cached is not None:
+        if self.steps_cached is not None:
 
             msg = "{0}: {1} steps of temporary value {2} pending, not setting steps"
 
@@ -561,7 +549,7 @@ class Converter:
 
         # Python: this creates a copy
         #
-        self._steps_cached = self.steps
+        self.steps_cached = self.steps
 
         self.steps = value
 
@@ -574,7 +562,7 @@ class Converter:
         #
         if self.countdown > -1:
 
-            self.countdown = self.steps - (self._steps_cached - self.countdown)
+            self.countdown = self.steps - (self.steps_cached - self.countdown)
 
             if self.countdown < -1:
 
@@ -584,6 +572,32 @@ class Converter:
                                                                      self.countdown))
 
         return True
+
+    def end_temporary_steps(self):
+        """Reset any temporary step setting and restore the previous step value.
+        """
+
+        if self.steps_cached is not None:
+
+            LOGGER.info("restoring {0}.steps to {1}".format(self.name,
+                                                            self.steps_cached))
+
+            self.steps = self.steps_cached
+
+            self.steps_cached = None
+
+            # We do not log how much time has passed, so we restore to the
+            # full old step value.
+            # TODO: This actually prolongs the conversion. Replace with logging of steps.
+            #
+            self.countdown = self.steps
+
+            LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
+                                                                         self.countdown))
+
+            self._temp_countdown = -1
+
+        return
 
     def __repr__(self):
         """Readable string representation.
