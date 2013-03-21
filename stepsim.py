@@ -784,7 +784,7 @@ class Simulation:
            draw(), process() and deliver() methods will be called in
            Simulation.step().
 
-       Simulation.converter_list
+       Simulation.converter_names_list
            A list of Converters names, in order of their addition to the
            Simulation.
 
@@ -801,7 +801,7 @@ class Simulation:
         """
 
         self.converter_dict = {}
-        self.converter_list = []
+        self.converter_names_list = []
         self.container_dict = {}
         self.step_counter = 0
 
@@ -818,7 +818,7 @@ class Simulation:
 
         self.converter_dict[converter.name] = converter
 
-        self.converter_list.append(converter.name)
+        self.converter_names_list.append(converter.name)
 
         LOGGER.debug("Adding converter '{0}' to simulation.".format(converter.name))
 
@@ -842,7 +842,7 @@ class Simulation:
 
             del self.converter_dict[name]
 
-            del self.converter_list[self.converter_list.index(name)]
+            del self.converter_names_list[self.converter_names_list.index(name)]
 
             self.rebuild_container_dict()
 
@@ -857,9 +857,9 @@ class Simulation:
 
         self.container_dict = {}
 
-        # Use self.converter_list in all iterations to be deterministic
+        # Use self.converter_names_list in all iterations to be deterministic
         #
-        for name in self.converter_list:
+        for name in self.converter_names_list:
 
             converter = self.converter_dict[name]
 
@@ -955,9 +955,9 @@ class Simulation:
 
         converters_no_process = []
 
-        # Use self.converter_list in all iterations to be deterministic
+        # Use self.converter_names_list in all iterations to be deterministic
         #
-        for name in self.converter_list:
+        for name in self.converter_names_list:
 
             if not self.converter_dict[name].process():
 
@@ -1072,9 +1072,9 @@ class Simulation:
         #
         converter_lists = []
 
-        # Use self.converter_list in all iterations to be deterministic
+        # Use self.converter_names_list in all iterations to be deterministic
         #
-        for name in self.converter_list:
+        for name in self.converter_names_list:
 
             converter = self.converter_dict[name]
 
@@ -1143,9 +1143,9 @@ class Simulation:
 
         repr = "<Simulation, converters: {0}, containers: {1}>"
 
-        # Use self.converter_list in all iterations to be deterministic
+        # Use self.converter_names_list in all iterations to be deterministic
         #
-        return repr.format([self.converter_dict[name] for name in self.converter_list],
+        return repr.format([self.converter_dict[name] for name in self.converter_names_list],
                            list(self.container_dict.values()))
 
 def milestones(condition_string, converter_list, graph_export = None):
@@ -1241,9 +1241,9 @@ def milestones(condition_string, converter_list, graph_export = None):
 
             LOGGER.debug("looking for contributors to '{0}'".format(milestone_container.name))
 
-            # Using self.converter_list in all iterations to be deterministic
+            # Using self.converter_names_list in all iterations to be deterministic
             #
-            for name in simulation.converter_list:
+            for name in simulation.converter_names_list:
 
                 converter = simulation.converter_dict[name]
 
