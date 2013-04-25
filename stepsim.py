@@ -501,7 +501,10 @@ class Converter:
                                                                     tuple[0].type,
                                                                     tuple[0].name))
 
-                units_drawn = tuple[0].deliver(tuple[1])
+                # Do not use Container.deliver() to avoid counting this as
+                # an ordinary delivery.
+                #
+                tuple[0].stock = tuple[0].stock + tuple[1]
 
         self.countdown = -1
 
