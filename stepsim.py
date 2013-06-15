@@ -280,15 +280,21 @@ class Converter:
     def draw(self):
         """Draw units from source Containers. To be called by Simulation.step().
            Return True if Converter.countdown == -1, False otherwise.
+           This will also return False when the next step would exceed
+           Converter.max_units.
         """
 
+        # Do not check whether max_units *has* been crossed, but rather
+        # whether it *will* be crossed by the next step.
+        #
         if (self.max_units >= 0
-            and self.units_delivered >= self.max_units):
+            and self.units_delivered + self.target_units_tuple[1] >= self.max_units):
 
-            msg = "{0}: delivered {1} units, max units is {2}, no action."
+            msg = "{0}: delivered {1} units and would deliver {2} next step, max units is {3}, no action."
 
             LOGGER.info(msg.format(self.name,
                                    self.units_delivered,
+                                   self.target_units_tuple[1],
                                    self.max_units))
 
             self.last_step_successful = False
