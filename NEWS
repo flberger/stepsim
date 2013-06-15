@@ -1,6 +1,23 @@
 NEWS for StepSim
 ================
 
+0.5.7
+-----
+
+Released on 15 June 2013.
+
+Fixed several bugs in milestones(), and made logging more verbose. Converters 
+can be compared for equality now. Converter.steps_cached now officially 
+indicates whether a temporary step value is active. Added method 
+Converter.end_temporary_steps() to unconditionally reset a temporary step value. 
+Converter.revert() no longer uses the Container.deliver() method to return items 
+in order for them not being counted as delivered. Converter.draw() no longer 
+checks how many units have been delivered, but how many would be delivered in 
+the next step, and will refuse to draw when this would exceed 
+Converter.max_units. Simulation.save_dot() now groups equivalent converters to a 
+single graph node. Updated doctests in README.
+
+
 0.5.6
 -----
 

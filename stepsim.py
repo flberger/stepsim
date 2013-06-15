@@ -32,7 +32,7 @@ import re
 import copy
 from sys import stdout
 
-VERSION = "0.5.7a"
+VERSION = "0.5.7"
 
 LOGGER = logging.getLogger("stepsim")
 
