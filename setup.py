@@ -107,11 +107,11 @@ Then create a converter and set up the draw-deliver-ratio:
 
 ::
 
-    >>> buyer = stepsim.Converter("buyer", 2, (cashbox, 3), (storage, 1))
+    >>> buyer = stepsim.Converter("buyer", 2, (cashbox, 3), (storage, 2))
     buyer: Adding source 'cashbox', drawing 3 EUR per step.
 
 From any list of converters, we can get a list of simulation milestones
-that lead to an end condition (without actually starting the
+that lead to an end condition (without explicitly creating a
 simulation):
 
 ::
@@ -122,14 +122,14 @@ simulation):
     Milestones to achieve storage == 3:
     <BLANKLINE>
     Milestone:
-    9 EUR in cashbox (10 delivered, 111.11%)
+    6 EUR in cashbox (10 delivered, 166.67%)
     total: 100.0%
     <BLANKLINE>
     Milestone:
     3.0 parts in storage (0 delivered, 0.0%)
     total: 0.0%
     ------------------------------
-    [<Milestone (cashbox: 9) 100.0%>, <Milestone (storage: 3.0) 0.0%>]
+    [<Milestone (cashbox: 6) 100.0%>, <Milestone (storage: 3.0) 0.0%>]
 
 Let's create a simulation:
 
@@ -170,7 +170,7 @@ condition is met:
 
     >>> stepsim.be_quiet()
     >>> s.estimate_finish("storage == 2", 100)
-    8
+    4
 
 Behind the scenes, this will run a copy of the simulation. A maximum
 step value will prevent hanging on impossible conditions:
@@ -201,8 +201,8 @@ deliver.
 
 ::
 
-    >>> buyer.set_max_units(1)
-    buyer: setting max_units to 1
+    >>> buyer.set_max_units(3)
+    buyer: setting max_units to 3
 
 Note that this command will reset the counter of units delivered.
 
@@ -227,14 +227,14 @@ stops.
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
     >>> s.step()
-    buyer: Delivering 1 parts to storage.
-    storage stock is 1 parts now.
-    buyer has delivered 1 units since last reset.
-    Active Container of buyer: <storage: 1 parts in stock>
+    buyer: Delivering 2 parts to storage.
+    storage stock is 2 parts now.
+    buyer has delivered 2 units since last reset.
+    Active Container of buyer: <storage: 2 parts in stock>
     >>> s.step()
-    buyer: delivered 1 units, max units is 1, no action.
+    buyer: delivered 2 units and would deliver 2 next step, max units is 3, no action.
     >>> s.step()
-    buyer: delivered 1 units, max units is 1, no action.
+    buyer: delivered 2 units and would deliver 2 next step, max units is 3, no action.
 
 With the maximum number of units set to -1, the converter will deliver
 an unlimited number. This is the default.
@@ -273,11 +273,11 @@ True if the change was successful:
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
     >>> s.step()
-    buyer: Delivering 1 parts to storage.
-    storage stock is 2 parts now.
+    buyer: Delivering 2 parts to storage.
+    storage stock is 4 parts now.
     restoring buyer.steps to 2
-    buyer has delivered 1 units since last reset.
-    Active Container of buyer: <storage: 2 parts in stock>
+    buyer has delivered 2 units since last reset.
+    Active Container of buyer: <storage: 4 parts in stock>
 
 We can run the simulation from the current state until an end condition
 is satisfied. In this case we let it run until the buyer can not buy any
@@ -300,10 +300,10 @@ more parts:
     buyer: Conversion in progress, 1 steps left.
     Active Container of buyer: None
     --- Step 18: -----------------------------------------------
-    buyer: Delivering 1 parts to storage.
-    storage stock is 3 parts now.
-    buyer has delivered 2 units since last reset.
-    Active Container of buyer: <storage: 3 parts in stock>
+    buyer: Delivering 2 parts to storage.
+    storage stock is 6 parts now.
+    buyer has delivered 4 units since last reset.
+    Active Container of buyer: <storage: 6 parts in stock>
     --- Step 19: -----------------------------------------------
     buyer: Ready to draw resources
     buyer: Cannot draw 3 EUR from cashbox, only 1 left.
@@ -311,7 +311,7 @@ more parts:
     --- Break condition met, simulation finished. ---------------
     Final state after 19 steps:
     <cashbox: 1 EUR in stock>
-    <storage: 3 parts in stock>
+    <storage: 6 parts in stock>
 
 You can export the simulation graph in the DOT graph language (see
 `http://www.graphviz.org/ <http://www.graphviz.org/>`_):
@@ -360,8 +360,7 @@ StepSim in the Python Package Index: http://pypi.python.org/pypi/stepsim
 Author
 ------
 
-Florian Berger
-"""
+Florian Berger"""
 
 # TODO: Don't install anything into /share/doc, it's too OS-dependent
 
