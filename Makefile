@@ -13,7 +13,7 @@ help:
 	@echo '    README.rst'
 	@echo '    freecode'
 	@echo '    sign'
-	@echo '    lp'
+	@echo '    bitbucket'
 
 doctest:
 	$(PYTHON) -m doctest README
@@ -25,18 +25,16 @@ user_install:
 	$(PYTHON) setup.py install --user
 
 commit.txt: Makefile making_cakes.py README setup.py stepsim.py
-	# single line because bzr diff returns false when there are diffs
-	#
-	bzr diff > commit.txt ; nano commit.txt
+	hg diff > commit.txt ; nano commit.txt
 
-commit:
+commit: commit.txt
 	@echo commit.txt:
 	@echo ------------------------------------------------------
 	@cat commit.txt
 	@echo ------------------------------------------------------
 	@echo RETURN to commit using commit.txt, CTRL-C to cancel:
 	@read DUMMY
-	bzr commit --file commit.txt && rm -vf commit.txt
+	hg commit --logfile commit.txt && rm -vf commit.txt
 
 xclip:
 	pandoc --strict README | xclip
@@ -63,6 +61,5 @@ sign:
 	for i in dist/*.zip ; do gpg --sign --armor --detach $$i ; done
 	gpg --verify --multifile dist/*.asc
 
-lp:
-	bzr launchpad-login fberger-fbmd
-	bzr push lp:~fberger-fbmd/stepsim/trunk
+bitbucket:
+	hg push https://flberger@bitbucket.org/flberger/stepsim

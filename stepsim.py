@@ -288,7 +288,7 @@ class Converter:
         # whether it *will* be crossed by the next step.
         #
         if (self.max_units >= 0
-            and self.units_delivered + self.target_units_tuple[1] >= self.max_units):
+            and self.units_delivered + self.target_units_tuple[1] > self.max_units):
 
             msg = "{0}: delivered {1} units and would deliver {2} next step, max units is {3}, no action."
 

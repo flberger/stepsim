@@ -349,7 +349,7 @@ StepSim is licensed under the GPL. See the file COPYING for details.
 Links
 -----
 
-StepSim on Launchpad: https://launchpad.net/stepsim
+StepSim on Bitbucket: https://bitbucket.org/flberger/stepsim
 
 StepSim on ohloh: https://www.ohloh.net/p/stepsim
 
@@ -360,7 +360,8 @@ StepSim in the Python Package Index: http://pypi.python.org/pypi/stepsim
 Author
 ------
 
-Florian Berger"""
+Florian Berger
+"""
 
 # TODO: Don't install anything into /share/doc, it's too OS-dependent
 
