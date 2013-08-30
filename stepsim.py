@@ -209,6 +209,10 @@ class Converter:
            delivered to. None if no Container has been accessed in the current
            step.
 
+       Converter.failed_container
+           Container that prevented the last successful draw because not
+           enough units were present. Initially None.
+
        Converter.max_units
            Integer giving the maximum number of units that this Converter will
            deliver. If max_units < 0, the Converter will deliver an unlimited
@@ -251,6 +255,8 @@ class Converter:
         self.countdown = -1
 
         self.active_container = None
+
+        self.failed_container = None
 
         self.max_units = -1
 
@@ -325,11 +331,15 @@ class Converter:
 
                     self.last_step_successful = False
 
+                    self.failed_container = tuple[0]
+
                     # No active Container
                     #
                     self.active_container = None
 
             if self.last_step_successful:
+
+                self.failed_container = None
 
                 # Loop again, drawing from all source Containers
                 #
@@ -365,6 +375,8 @@ class Converter:
                                                 tuple[0].name))
 
                         self.last_step_successful = False
+
+                        self.failed_container = tuple[0]
 
                 # All good?
                 #
@@ -856,7 +868,7 @@ class Simulation:
             self.rebuild_container_dict()
 
         else:
-            LOGGER.error("Cannot remove '{0}', Converter not found.".format(name))
+            LOGGER.warning("Cannot remove '{0}', Converter not found.".format(name))
 
         return
 
@@ -1173,6 +1185,9 @@ def milestones(condition_string, converter_list, graph_export = None):
 
        If no Milestones can be computed for this condition, an empty list is
        returned.
+
+       The values computed by this function are not optimal, or the minimal
+       solution.
     """
 
     # This is not an Simulation instance method to be able to compute Milestones
@@ -1283,6 +1298,7 @@ def milestones(condition_string, converter_list, graph_export = None):
             current_milestone.converters.extend(current_converters)
 
             # We use them round robin until the demanded value is fulfilled.
+            # NOTE: This of course does not produce minimal or optimal values.
             #
             units_produced = 0
 
