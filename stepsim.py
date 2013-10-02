@@ -202,7 +202,7 @@ class Converter:
            A counter to implement a three-state state machine:
            -1 : ready to draw resources
            > 0 : resources drawn, conversion in progress
-            0 : conversion ready, delivering
+           0 : conversion ready, delivering
 
        Converter.active_container
            The last Container that this Converter has just drawn from or
@@ -477,14 +477,7 @@ class Converter:
 
                 if self._temp_countdown == 0:
 
-                    LOGGER.info("restoring {0}.steps to {1}".format(self.name,
-                                                                    self.steps_cached))
-
-                    self.steps = self.steps_cached
-
-                    self.steps_cached = None
-
-                    self._temp_countdown = -1
+                    self.end_temporary_steps()
 
                 self.units_delivered += self.target_units_tuple[1]
 
@@ -583,6 +576,8 @@ class Converter:
         #
         if self.countdown > -1:
 
+            # NOTE: Contrary to end_temporary_steps(), we do not grant a relative degree of completeness here.
+            #
             self.countdown = self.steps - (self.steps_cached - self.countdown)
 
             if self.countdown < -1:
@@ -600,21 +595,21 @@ class Converter:
 
         if self.steps_cached is not None:
 
+            if self.countdown > 0:
+
+                # Set value to steps accomplished relative to the old steps value.
+                #
+                self.countdown = int((float(self.steps - self.countdown) / self.steps) * self.steps_cached)
+
+                LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
+                                                                             self.countdown))
+
             LOGGER.info("restoring {0}.steps to {1}".format(self.name,
                                                             self.steps_cached))
 
             self.steps = self.steps_cached
 
             self.steps_cached = None
-
-            # We do not log how much time has passed, so we restore to the
-            # full old step value.
-            # TODO: This actually prolongs the conversion. Replace with logging of steps.
-            #
-            self.countdown = self.steps
-
-            LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
-                                                                         self.countdown))
 
             self._temp_countdown = -1
 
