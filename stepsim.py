@@ -546,6 +546,8 @@ class Converter:
            a temporary value is already active.
         """
 
+        # TODO: Add doctest for this method, for both kind of value changes, and possibly corner cases as 0 or critical floats.
+
         # The actual work will be done in Converter.process()
 
         if self.steps_cached is not None:
@@ -577,13 +579,10 @@ class Converter:
         #
         if self.countdown > -1:
 
-            # NOTE: Contrary to end_temporary_steps(), we do not grant a relative degree of completeness here.
+            # Compute a relative degree of completeness here.
+            # Explicit float conversion for Python 2.6
             #
-            self.countdown = self.steps - (self.steps_cached - self.countdown)
-
-            if self.countdown < -1:
-
-                self.countdown = -1
+            self.countdown = int((float(self.countdown) / self.steps_cached) * self.steps)
 
         LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
                                                                      self.countdown))
@@ -593,6 +592,8 @@ class Converter:
     def end_temporary_steps(self):
         """Reset any temporary step setting and restore the previous step value.
         """
+
+        # TODO: Add doctest for this method, for both kind of value changes, and possibly corner cases as 0 or critical floats.
 
         if self.steps_cached is not None:
 
