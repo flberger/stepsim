@@ -25,7 +25,7 @@ user_install:
 	$(PYTHON) setup.py install --user
 
 commit.txt: Makefile making_cakes.py README setup.py stepsim.py
-	hg diff > commit.txt ; nano commit.txt
+	hg diff > commit.txt
 
 commit: commit.txt
 	@echo commit.txt:

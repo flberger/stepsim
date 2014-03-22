@@ -228,6 +228,7 @@ class Converter:
 
     # TODO: implement adaptive flexible converters that draw as much as they can (or as much as they can get, given less resources) while keeping the ratio
     # TODO: count (active) steps for accounting
+    # TODO: Converter.source_tuples_list should probably be a dict, for easier analysis and source units retrieval.
 
     def __init__(self, name, steps, source_units_tuple, target_units_tuple):
         """Initialise.
@@ -597,9 +598,15 @@ class Converter:
 
             if self.countdown > 0:
 
-                # Set value to steps accomplished relative to the old steps value.
+                # Set value to steps accomplished relative to the old
+                # steps value.
+                # "The restored step value minus the share of steps
+                # already completed of the temporary larger value, applied
+                # to the restored step value."
                 #
-                self.countdown = int((float(self.steps - self.countdown) / self.steps) * self.steps_cached)
+                # Explicit float conversion for Python 2.6
+                #
+                self.countdown = self.steps_cached - int((float(self.steps - self.countdown) / self.steps) * self.steps_cached)
 
                 LOGGER.info("{0}: setting remaining countdown to {1}".format(self.name,
                                                                              self.countdown))
