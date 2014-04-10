@@ -23,6 +23,7 @@
 # TODO: name simulations, and when logging, put the name of the simulations in front of the message
 # TODO: GUI with Cairo-graph (http://cairographics.org/pycairo/) and Tkinter dialogs
 # TODO: kompakterer Graph-Export: Converter mit gleicher Funktion zu einem Knoten zusammenfassen
+# TODO: make Simulation container listings in repr and milestones etc. deterministic, for automated testing.
 
 # NOTE: in string formatting operations, I use "{1}" instead of "{}" to be compatible with Python < 3.1
 
@@ -243,7 +244,10 @@ class Converter:
 
         self.target_units_tuple = target_units_tuple
 
+        # TODO: Converter.source_tuples_list really should be a dict.
+        #
         self.source_tuples_list = []
+
         self.draw_from(source_units_tuple[0], source_units_tuple[1])
 
         self.last_step_successful = True
@@ -670,6 +674,10 @@ class Milestone:
        Milestone.container_value_dict
            A dict mapping container instances to the required number of units.
 
+       Milestone.container_drawback_dict
+           A dict mapping container instances to a drawback to be used in the
+           calculation in Milestone.percent().
+
        Milestone.containers
            A list of containers in order of their addition.
 
@@ -684,6 +692,7 @@ class Milestone:
         """
 
         self.container_value_dict = {}
+        self.container_drawback_dict = {}
         self.containers = []
         self.converters = []
 
@@ -705,6 +714,27 @@ class Milestone:
 
         return
 
+    def add_drawback(self, container, drawback):
+        """Add or increase drawback value for the container.
+        """
+
+        # As this is additional information, the container must
+        # already be registered.
+        #
+        if not container in self.containers:
+
+            raise KeyError("Container {0} not in Milestone.containers".format(container))
+
+        if container in self.container_drawback_dict.keys():
+
+            self.container_drawback_dict[container] = self.container_drawback_dict[container] + drawback
+
+        else:
+
+            self.container_drawback_dict[container] = drawback
+
+        return
+
     def units(self, container):
         """Convenience method, equivalent to Milestone.container_value_dict[container].
         """
@@ -718,11 +748,17 @@ class Milestone:
            the current stock.
         """
 
+        drawback = 0
+
+        if container in self.container_drawback_dict.keys():
+
+            drawback = self.container_drawback_dict[container]
+
         if container in self.containers:
 
             # Explicit float conversion for Python 2.6
             #
-            return float(container.units_delivered) / float(self.units(container)) * 100.0
+            return (float(container.units_delivered) - float(drawback)) / float(self.units(container)) * 100.0
 
         else:
             raise KeyError("Container {0} not in Milestone.container_value_dict".format(container))
@@ -819,6 +855,8 @@ class Simulation:
        Simulation.step_counter
            An integer counting the steps that have been taken.
     """
+
+    # TODO: Replace converter_dict + converter_names_list by an ordered dict?
 
     def __init__(self, *converters):
         """Initialise.
@@ -1172,7 +1210,7 @@ class Simulation:
         return repr.format([self.converter_dict[name] for name in self.converter_names_list],
                            list(self.container_dict.values()))
 
-def milestones(condition_string, converter_list, graph_export = None):
+def milestones(condition_string, converter_list, optimise_container = None, graph_export = None):
     """Return an ordered list of Milestone instances that represents milestones to meet the condition.
 
        condition_string must be a string suitable for submission to
@@ -1183,6 +1221,10 @@ def milestones(condition_string, converter_list, graph_export = None):
        converter_list must be a list of Converters that should be searched for
        contributions to Milestones.
 
+       If optimise_container, it must be a container used by at least
+       one converter in converter_list. Milestones will be calculated
+       so that usage of this container is minimal.
+
        If graph_export is given, it must be a file name to call
        Simulation.save_dot() with.
 
@@ -1191,6 +1233,7 @@ def milestones(condition_string, converter_list, graph_export = None):
 
        The values computed by this function are not optimal, or the minimal
        solution.
+
     """
 
     # This is not an Simulation instance method to be able to compute Milestones
@@ -1300,9 +1343,39 @@ def milestones(condition_string, converter_list, graph_export = None):
             #
             current_milestone.converters.extend(current_converters)
 
-            # We use them round robin until the demanded value is fulfilled.
-            # NOTE: This of course does not produce minimal or optimal values.
-            #
+            optimal_converter = None
+
+            if optimise_container is not None:
+
+                LOGGER.debug("searching for optimal converter to use minimal {0}".format(optimise_container))
+
+                optimal_converter = None
+
+                for candidate_converter in current_converters:
+
+                    if optimise_container in [container_value_tuple[0] for container_value_tuple in candidate_converter.source_tuples_list]:
+
+                        if optimal_converter is None:
+
+                            optimal_converter = candidate_converter
+
+                        else:
+
+                            # TODO: Converter.source_tuples_list really should be a dict. See class Converter.
+                            # Because this it totally quirky.
+                            #
+                            old_value = [container_value_tuple for container_value_tuple in optimal_converter.source_tuples_list if container_value_tuple[0] == optimise_container][0][1]
+
+                            new_value = [container_value_tuple for container_value_tuple in candidate_converter.source_tuples_list if container_value_tuple[0] == optimise_container][0][1]
+
+                            if new_value < old_value:
+
+                                optimal_converter = candidate_converter
+
+                # Now we got an optimal_converter, or None.
+
+            LOGGER.debug("optimal converter is {0}".format(optimal_converter))
+
             units_produced = 0
 
             while units_produced < current_milestone.units(milestone_container):
@@ -1312,36 +1385,36 @@ def milestones(condition_string, converter_list, graph_export = None):
                 LOGGER.debug(msg.format(units_produced,
                                         current_milestone.units(milestone_container)))
 
-                for converter in current_converters:
+                converter = current_converters[0]
 
-                    LOGGER.debug("converter '{0}'".format(converter.name))
+                if optimal_converter is not None:
 
-                    # Save source container units
+                    converter = optimal_converter
+
+                else:
+
+                    # Rotate, to pick another one next time
+                    # We use them round robin until the demanded value is fulfilled.
                     #
-                    for source_unit_tuple in converter.source_tuples_list:
+                    current_converters.append(current_converters.pop(0))
 
-                        new_milestone.add(source_unit_tuple[0], source_unit_tuple[1])
+                LOGGER.debug("converter '{0}'".format(converter.name))
 
-                        LOGGER.debug("'{0}' needs {1} more of '{2}'".format(converter.name,
-                                                                            source_unit_tuple[1],
-                                                                            source_unit_tuple[0].name))
+                # Save source container units
+                #
+                for source_unit_tuple in converter.source_tuples_list:
 
-                        LOGGER.debug("new milestone is currently {0}".format(repr(new_milestone)))
+                    new_milestone.add(source_unit_tuple[0], source_unit_tuple[1])
 
-                    # Deliver target units
-                    #
-                    units_produced = units_produced + converter.target_units_tuple[1]
+                    LOGGER.debug("'{0}' needs {1} more of '{2}'".format(converter.name,
+                                                                        source_unit_tuple[1],
+                                                                        source_unit_tuple[0].name))
 
-                    # Already satisfied?
-                    #
-                    if units_produced >= current_milestone.units(milestone_container):
+                    LOGGER.debug("new milestone is currently {0}".format(repr(new_milestone)))
 
-                        msg = "{0} of {1} units produced, aborting"
-
-                        LOGGER.debug(msg.format(units_produced,
-                                                current_milestone.units(milestone_container)))
-
-                        break
+                # Deliver target units
+                #
+                units_produced = units_produced + converter.target_units_tuple[1]
 
             # Enough target units of milestone_container produced.
 
@@ -1353,6 +1426,35 @@ def milestones(condition_string, converter_list, graph_export = None):
 
     # current_milestone evaluates to False, all possible milestones collected
 
+    # Now that all milestones are complete and sorted, derive
+    # drawbacks to use in completeness calculation. Thus, drain effects
+    # of earlier milestones on later milestones are taken into account.
+    #
+    drawback_dict = {}
+
+    for milestone in milestones:
+
+        # First add accumulated drawbacks to this milestone
+        #
+        for drawback_container in drawback_dict.keys():
+
+            if drawback_container in milestone.containers:
+
+                milestone.add_drawback(drawback_container, drawback_dict[drawback_container])
+
+        # Then increase drawbacks for upcoming milestones by the
+        # minimum values needed in this milestone
+        #
+        for milestone_container in milestone.container_value_dict.keys():
+
+            if milestone_container in drawback_dict.keys():
+
+                drawback_dict[milestone_container] += milestone.container_value_dict[milestone_container]
+
+            else:
+
+                drawback_dict[milestone_container] = milestone.container_value_dict[milestone_container]
+    
     LOGGER.info("------------------------------")
     LOGGER.info("Milestones to achieve {0}:".format(condition_string))
 
